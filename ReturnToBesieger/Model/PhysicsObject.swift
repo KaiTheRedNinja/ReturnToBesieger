@@ -7,9 +7,11 @@
 
 import SwiftUI
 
-protocol PhysicsObject: Identifiable where ID == UUID {
+protocol PhysicsObject: Identifiable {
     associatedtype HB: HitBox
 
+    /// The ID
+    var id: UUID { get }
     /// The hitbox of the object
     var hitbox: HB { get set }
     /// The velocity of the object
@@ -27,14 +29,14 @@ extension PhysicsObject {
 }
 
 struct Ball: PhysicsObject {
-    var id: UUID
+    var id: UUID = .init()
     var hitbox: CircleHitbox
     var velocity: CGPoint
     var isFixed: Bool { false }
 }
 
 struct Wall: PhysicsObject {
-    var id: UUID
+    var id: UUID = .init()
     var hitbox: RotatableRectangleHitbox
     var velocity: CGPoint
     var isFixed: Bool { true }

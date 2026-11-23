@@ -7,9 +7,15 @@
 
 import SwiftUI
 
+@Observable
 class PhysicsManager {
     var objects: [any PhysicsObject] = []
 
+    init(objects: [any PhysicsObject] = []) {
+        self.objects = objects
+    }
+
+    /// Updates all of the objects. Note that you must NOT remove or add objects during an update.
     func update(dt: TimeInterval) {
         // move all objects
         var newObjects: [any PhysicsObject] = []
@@ -22,9 +28,9 @@ class PhysicsManager {
 
         // check for collisions. If there are, we revert the motion.
         // O(n^2) when no collisions, slightly higher if there are.
-        for (index, object1) in objects.enumerated() {
+        for (index, object1) in newObjects.enumerated() {
             var normal: CGPoint = .zero
-            for object2 in objects {
+            for object2 in newObjects {
                 // skip if they're the same object
                 guard object2.id != object1.id else { continue }
                 // use a cheap hitbox check at first
@@ -45,8 +51,10 @@ class PhysicsManager {
             let scale = objectCopy.velocity.dot(normal)
             let newVelocity = objectCopy.velocity - 2 * (scale * normal)
             objectCopy.velocity = newVelocity
-            objects[index] = objectCopy
+            newObjects[index] = objectCopy
         }
+
+        self.objects = newObjects
     }
 
     /// Returns the normal vector of a collision, or `nil` if the objects do not collide.

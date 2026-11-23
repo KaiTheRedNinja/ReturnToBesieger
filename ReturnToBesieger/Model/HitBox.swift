@@ -45,7 +45,7 @@ struct RotatableRectangleHitbox: HitBox {
     /// The corners of the rotated rectangle
     var corners: [CGPoint] {
         let naturalRect = CGRect(center: .zero, size: size)
-        return naturalRect.corners.map { $0.rotating(acw: angle) }
+        return naturalRect.corners.map { $0.rotating(acw: angle) + center }
     }
 
     /// The edges of the rotated rectangle
@@ -53,7 +53,7 @@ struct RotatableRectangleHitbox: HitBox {
         var corners = corners
         corners.append(corners[0]) // wrap
         return (0..<4).map { index in
-                .init(point1: corners[index], point2: corners[index+1])
+            .init(point1: corners[index], point2: corners[index+1])
         }
     }
 }
