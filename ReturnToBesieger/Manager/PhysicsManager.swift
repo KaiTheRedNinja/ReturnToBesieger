@@ -11,7 +11,33 @@ class PhysicsManager {
 
 }
 
-struct Ball {
+protocol PhysicsObject {
+    associatedtype HB: HitBox
+
+    /// The hitbox of the object
+    var hitbox: HB { get }
+    /// The velocity of the object
+    var velocity: CGPoint { get }
+}
+
+struct Ball: PhysicsObject {
+    var hitbox: CircleHitbox
+    var velocity: CGPoint
+}
+
+struct Wall: PhysicsObject {
+    var hitbox: RotatableRectangleHitbox
+    var velocity: CGPoint
+}
+
+protocol HitBox {
+    /// The center of the object. This may be manipulated externally for movement.
+    var center: CGPoint { get set }
+    /// The frame of the object, that contains the whole of the object
+    var frame: CGRect { get }
+}
+
+struct CircleHitbox: HitBox {
     var radius: CGFloat
     var center: CGPoint
 
@@ -28,7 +54,7 @@ struct Ball {
     }
 }
 
-struct RotatableRectangle {
+struct RotatableRectangleHitbox: HitBox {
     var size: CGSize
     var center: CGPoint
     var angle: Angle
@@ -55,9 +81,21 @@ struct RotatableRectangle {
     }
 }
 
-struct LineSegment {
+struct LineSegment: HitBox {
     var point1: CGPoint
     var point2: CGPoint
+
+    var center: CGPoint {
+        get {
+            0.5 * (point1 + point2)
+        }
+        set {
+            // simple linear offset both points
+            let offset = newValue - (0.5 * (point1 + point2))
+            point1 += offset
+            point2 += offset
+        }
+    }
 
     var frame: CGRect {
         .init(
@@ -69,7 +107,7 @@ struct LineSegment {
     }
 
     /// Determines the closest point on this line to a ball
-    func closestPoint(toBall ball: Ball) -> CGPoint {
+    func closestPoint(toCircle circle: CircleHitbox) -> CGPoint {
         // if points are equal, its just that point
         guard point1 != point2 else { return point1 }
 
@@ -80,7 +118,7 @@ struct LineSegment {
         // the closest point can therefore be found via clamping the following to 0 and 1:
         // t = (C - A).(B - A) / |B - A|^2
 
-        let ca = ball.center - point1
+        let ca = circle.center - point1
         let ba = point2 - point1
 
         let t = max(0, min((ca).dot(ba) / pow((ba).magnitude, 2), 1))
@@ -90,15 +128,15 @@ struct LineSegment {
     }
 
     /// Returns whether or not a ball intersects this line
-    func intersects(ball: Ball) -> Bool {
-        let closest = closestPoint(toBall: ball)
-        return ball.contains(point: closest)
+    func intersects(circle: CircleHitbox) -> Bool {
+        let closest = closestPoint(toCircle: circle)
+        return circle.contains(point: closest)
     }
 
     /// Returns the normal unit vector of a collision between the ball and the line. This will point from the line to the ball.
-    func normalUnitVector(ball: Ball) -> CGPoint {
-        let closest = closestPoint(toBall: ball)
-        return (ball.center - closest).unitVec()
+    func normalUnitVector(circle: CircleHitbox) -> CGPoint {
+        let closest = closestPoint(toCircle: circle)
+        return (circle.center - closest).unitVec()
     }
 }
 
@@ -122,37 +160,37 @@ extension CGRect {
 }
 
 /// Vector extensions
-extension CGPoint {
+extension CGPoint: @retroactive AdditiveArithmetic {
     /// Adds two vectors together
-    static func + (lhs: Self, rhs: Self) -> CGPoint {
+    public static func + (lhs: Self, rhs: Self) -> CGPoint {
         .init(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
     }
     /// Subtracts a vector from another
-    static func - (lhs: Self, rhs: Self) -> CGPoint {
+    public static func - (lhs: Self, rhs: Self) -> CGPoint {
         .init(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
     }
     /// Subtracts a vector from zero
-    static prefix func - (rhs: Self) -> CGPoint {
+    public static prefix func - (rhs: Self) -> CGPoint {
         .init(x: -rhs.x, y: -rhs.y)
     }
     /// Scales a vector by a scalar
-    static func * (lhs: CGFloat, rhs: Self) -> CGPoint {
+    public static func * (lhs: CGFloat, rhs: Self) -> CGPoint {
         .init(x: lhs * rhs.x, y: lhs * rhs.y)
     }
     /// Performs the dot product operation on this value and another
-    func dot(_ rhs: Self) -> CGFloat {
+    public func dot(_ rhs: Self) -> CGFloat {
         self.x * rhs.x + self.y * rhs.y
     }
     /// Obtains the unit vector of this vector
-    func unitVec() -> CGPoint {
+    public func unitVec() -> CGPoint {
         .init(x: x / magnitude, y: y / magnitude)
     }
     /// The magnitude of this vector
-    var magnitude: CGFloat {
+    public var magnitude: CGFloat {
         sqrt(x*x + y*y)
     }
     /// The angle of this vector, anticlockwise from the positive x-axis
-    var angle: Angle {
+    public var angle: Angle {
         // calculate base angle, which will be between 0 and 180 degrees
         let base: CGFloat = if x == 0 {
             .pi * 0.5
@@ -163,11 +201,11 @@ extension CGPoint {
         return .radians(base + (y >= 0 ? 0 : .pi))
     }
     /// Flips a point along the x-axis
-    func vflip() -> CGPoint {
+    public func vflip() -> CGPoint {
         .init(x: self.x, y: -self.y)
     }
     /// Rotates this vector anticlockwise by the given angle
-    func rotating(acw angle: Angle) -> CGPoint {
+    public func rotating(acw angle: Angle) -> CGPoint {
         .init(
             x: x * cos(angle.radians) - y * sin(angle.radians),
             y: y * sin(angle.radians) + y * cos(angle.radians)
