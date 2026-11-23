@@ -38,8 +38,8 @@ struct RotatableRectangleHitbox: HitBox {
 
     var frame: CGRect {
         let transform = CGAffineTransform(rotationAngle: angle.radians)
-        let centeredRect = CGRectApplyAffineTransform(.init(center: center, size: size), transform)
-        return centeredRect
+        let centeredRect = CGRectApplyAffineTransform(.init(center: .zero, size: size), transform)
+        return .init(center: center, size: centeredRect.size)
     }
 
     /// The corners of the rotated rectangle
@@ -98,7 +98,8 @@ struct LineSegment: HitBox {
         let ca = circle.center - point1
         let ba = point2 - point1
 
-        let t = max(0, min((ca).dot(ba) / pow((ba).magnitude, 2), 1))
+        let tRaw = (ca).dot(ba) / pow((ba).magnitude, 2)
+        let t = max(0, min(tRaw, 1))
 
         // return the point
         return point1 + t * (ba)

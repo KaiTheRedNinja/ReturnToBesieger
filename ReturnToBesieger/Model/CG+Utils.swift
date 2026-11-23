@@ -71,11 +71,11 @@ extension CGPoint: @retroactive AdditiveArithmetic {
     public func vflip() -> CGPoint {
         .init(x: self.x, y: -self.y)
     }
-    /// Rotates this vector anticlockwise by the given angle
+    /// Rotates this vector anticlockwise by the given angle around the origin
     public func rotating(acw angle: Angle) -> CGPoint {
         .init(
-            x: x * cos(angle.radians) - y * sin(angle.radians),
-            y: y * sin(angle.radians) + y * cos(angle.radians)
+            x: x * cos(-angle.radians) - y * sin(-angle.radians),
+            y: x * sin(-angle.radians) + y * cos(-angle.radians)
         )
     }
 }

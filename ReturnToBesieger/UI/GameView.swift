@@ -37,7 +37,16 @@ struct GameView: View {
                             .rotationEffect(-wall.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
                     }
                 }
-                .offset(x: object.hitbox.center.x, y: -object.hitbox.center.y)
+                .offset(x: object.hitbox.center.x, y: object.hitbox.center.y)
+
+                if let wall = object as? Wall {
+                    ForEach(wall.hitbox.corners.enumerated(), id: \.offset) { (_, corner) in
+                        Circle()
+                            .fill(.blue)
+                            .frame(width: 10, height: 10)
+                            .offset(x: corner.x, y: corner.y)
+                    }
+                }
             }
         }
         .onReceive(gameClock) { _ in

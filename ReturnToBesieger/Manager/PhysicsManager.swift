@@ -63,7 +63,7 @@ class PhysicsManager {
         if let circle = object1.hitbox as? CircleHitbox,
            let rect = object2.hitbox as? RotatableRectangleHitbox {
             var normal: CGPoint = .zero
-            for edge in rect.edges {
+            for edge in rect.edges where edge.intersects(circle: circle) {
                 normal += edge.normalUnitVector(circle: circle)
             }
             // if still zero, that means no collisions occured
