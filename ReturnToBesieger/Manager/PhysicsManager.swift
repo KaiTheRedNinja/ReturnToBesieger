@@ -28,7 +28,34 @@ struct Ball {
     }
 }
 
-struct Line {
+struct RotatableRectangle {
+    var size: CGSize
+    var center: CGPoint
+    var angle: Angle
+
+    var frame: CGRect {
+        let transform = CGAffineTransform(rotationAngle: angle.radians)
+        let centeredRect = CGRectApplyAffineTransform(.init(center: center, size: size), transform)
+        return centeredRect
+    }
+
+    /// The corners of the rotated rectangle
+    var corners: [CGPoint] {
+        let naturalRect = CGRect(center: .zero, size: size)
+        return naturalRect.corners.map { $0.rotating(acw: angle) }
+    }
+
+    /// The edges of the rotated rectangle
+    var edges: [LineSegment] {
+        var corners = corners
+        corners.append(corners[0]) // wrap
+        return (0..<4).map { index in
+            .init(point1: corners[index], point2: corners[index+1])
+        }
+    }
+}
+
+struct LineSegment {
     var point1: CGPoint
     var point2: CGPoint
 
@@ -83,6 +110,15 @@ extension CGRect {
     init(minX: CGFloat, minY: CGFloat, maxX: CGFloat, maxY: CGFloat) {
         self.init(x: minX, y: minY, width: maxX-minX, height: maxY-minY)
     }
+
+    var corners: [CGPoint] {
+        [
+            .init(x: minX, y: minY),
+            .init(x: minX, y: maxY),
+            .init(x: maxX, y: maxY),
+            .init(x: maxX, y: minY),
+        ]
+    }
 }
 
 /// Vector extensions
@@ -115,4 +151,46 @@ extension CGPoint {
     var magnitude: CGFloat {
         sqrt(x*x + y*y)
     }
+    /// The angle of this vector, anticlockwise from the positive x-axis
+    var angle: Angle {
+        // calculate base angle, which will be between 0 and 180 degrees
+        let base: CGFloat = if x == 0 {
+            .pi * 0.5
+        } else {
+            (atan(y/x) + .pi).truncatingRemainder(dividingBy: .pi)
+        }
+        // increase by 180 degrees if in 3rd and 4th quadrants (i.e. negative y)
+        return .radians(base + (y >= 0 ? 0 : .pi))
+    }
+    /// Flips a point along the x-axis
+    func vflip() -> CGPoint {
+        .init(x: self.x, y: -self.y)
+    }
+    /// Rotates this vector anticlockwise by the given angle
+    func rotating(acw angle: Angle) -> CGPoint {
+        .init(
+            x: x * cos(angle.radians) - y * sin(angle.radians),
+            y: y * sin(angle.radians) + y * cos(angle.radians)
+        )
+    }
 }
+
+//struct Polar {
+//    var magnitude: CGFloat
+//    var angle: Angle
+//
+//    /// The polar coordinate in cartesian
+//    var point: CGPoint {
+//        .init(x: magnitude * cos(angle.radians), y: magnitude * sin(angle.radians))
+//    }
+//
+//    init(point: CGPoint) {
+//        magnitude = point.magnitude
+//        angle = point.angle
+//    }
+//
+//    init(magnitude: CGFloat, angle: Angle) {
+//        self.magnitude = magnitude
+//        self.angle = angle
+//    }
+//}
