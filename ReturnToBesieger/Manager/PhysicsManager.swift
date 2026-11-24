@@ -31,19 +31,15 @@ class PhysicsManager {
             newObjects.append(objectCopy)
         }
 
-        // check for collisions. If there are, we calculate where they should move
-        // note that we assume that each object can only collide with one other object. This will probably result in
-        // phasing if an area gets cramped, but my brain too small to handle multi-object simultaneous collisions :(
-
-        var collided: Set<UUID> = []
+        // check for collisions. If there are, we calculate where they should move.
+        // collisions are calculated in array order, so items that appear first in the array will have their collisions calculated first.
+        var collided: Set<Set<UUID>> = []
         for (index1, object1) in newObjects.enumerated() {
-            guard !collided.contains(object1.id) else { continue }
-
             var normal: CGPoint = .zero
             var otherObject: (Int, any PhysicsObject)?
             for (index2, object2) in newObjects.enumerated().dropFirst(index1+1) { // we can skip everything before the current object because its redundant
-                // if the other object has been collided (or is equal to object1), we can ignore it
-                guard !collided.contains(object2.id), object2.id != object1.id else { continue }
+                // make sure the objects are not the same object, or have collided before
+                guard !collided.contains([object1.id, object2.id]), object2.id != object1.id else { continue }
                 // check for a collision. The collision uses a cheap ABBA (? is that its name) frame detection first, so failure is
                 // pretty cheap
                 guard let normalCandidate = normalOfCollision(hitBox1: object1.hitbox, hitBox2: object2.hitbox) else { continue }
@@ -57,8 +53,7 @@ class PhysicsManager {
             guard normal != .zero, let (index2, object2) = otherObject else { continue }
             normal = normal.unitVec()
             // add this object to collisions
-            collided.insert(object1.id)
-            collided.insert(object2.id)
+            collided.insert([object1.id, object2.id])
 
             // the two objects have collided. We make use of completely elastic collision to calculate their velocities:
             //
