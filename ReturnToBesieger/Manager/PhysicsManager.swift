@@ -10,6 +10,10 @@ import SwiftUI
 @Observable
 class PhysicsManager {
     var objects: [any PhysicsObject] = []
+    var hitInteractions: [any HitInteraction] = [
+        CircleCircleHitInteraction(),
+        CircleLineHitInteraction()
+    ]
 
     init(objects: [any PhysicsObject] = []) {
         self.objects = objects
@@ -59,6 +63,16 @@ class PhysicsManager {
 
     /// Returns the normal vector of a collision, or `nil` if the objects do not collide.
     func normalOfCollision(object1: any PhysicsObject, object2: any PhysicsObject) -> CGPoint? {
+//        // go over each hit type and see if any succeed
+//        for interactionCandidate in hitInteractions {
+//            do {
+//
+//            } catch {
+//                // the selected candidate does not work for this set of objects
+//                continue
+//            }
+//        }
+
         // for now, we only have ball-line and ball-ball collisions handled
         if let circle = object1.hitbox as? CircleHitbox,
            let rect = object2.hitbox as? RotatableRectangleHitbox {

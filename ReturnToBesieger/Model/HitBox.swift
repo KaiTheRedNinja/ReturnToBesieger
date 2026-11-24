@@ -21,29 +21,6 @@ struct CircleHitbox: HitBox {
     var frame: CGRect {
         .init(center: center, size: .init(width: radius*2, height: radius*2))
     }
-
-    /// Returns whether a given point is within or on the circle
-    func contains(point: CGPoint) -> Bool {
-        // definition of a circle
-        // (x-c_x)^2 + (y-c_y)^2 = r^2
-        // points within the circle are <= r^2 instead
-        (point.x - center.x) * (point.x - center.x) + (point.y - center.y) * (point.y - center.y) <= radius*radius
-    }
-
-    /// Determines if two circles intersect
-    func intersects(circle: CircleHitbox) -> Bool {
-        // the distance between the two circles must be less than the radius
-        // but more than their difference (otherwise they are concentric)
-        let centerDistance = (circle.center - self.center).magnitude
-        return abs(circle.radius - self.radius) < centerDistance && centerDistance < (circle.radius + self.radius)
-    }
-
-    /// Determines the normal vector of a collision with another circle. This will point from self to the other circle.
-    func normalUnitVector(circle: CircleHitbox) -> CGPoint {
-        // its literally just the vector from the center of one to the center of another....
-        let offsetVector = circle.center - self.center
-        return offsetVector.unitVec()
-    }
 }
 
 struct RotatableRectangleHitbox: HitBox {
@@ -96,39 +73,5 @@ struct LineSegment: HitBox {
             maxX: max(point1.x, point2.x),
             maxY: max(point1.y, point2.y)
         )
-    }
-
-    /// Determines the closest point on this line to a ball
-    func closestPoint(toCircle circle: CircleHitbox) -> CGPoint {
-        // if points are equal, its just that point
-        guard point1 != point2 else { return point1 }
-
-        // a line can be expressed parametrically as:
-        // A + t(B-A)
-        // where A and B are vectors corresponding to point 1 and 2, and t ranges from 0 to 1.
-
-        // the closest point can therefore be found via clamping the following to 0 and 1:
-        // t = (C - A).(B - A) / |B - A|^2
-
-        let ca = circle.center - point1
-        let ba = point2 - point1
-
-        let tRaw = (ca).dot(ba) / pow((ba).magnitude, 2)
-        let t = max(0, min(tRaw, 1))
-
-        // return the point
-        return point1 + t * (ba)
-    }
-
-    /// Returns whether or not a ball intersects this line
-    func intersects(circle: CircleHitbox) -> Bool {
-        let closest = closestPoint(toCircle: circle)
-        return circle.contains(point: closest)
-    }
-
-    /// Returns the normal unit vector of a collision between the ball and the line. This will point from the line to the ball.
-    func normalUnitVector(circle: CircleHitbox) -> CGPoint {
-        let closest = closestPoint(toCircle: circle)
-        return (circle.center - closest).unitVec()
     }
 }
