@@ -36,6 +36,22 @@ struct GameView: View {
                 velocity: .init(x: 1, y: 0)
             ),
             Wall(
+                hitbox: .init(size: .init(width: 20, height: 20), center: .init(x: 100, y: 0), angle: .degrees(0)),
+                velocity: .init(x: 0, y: 0)
+            ),
+            Wall(
+                hitbox: .init(size: .init(width: 20, height: 20), center: .init(x: 120, y: 0), angle: .degrees(0)),
+                velocity: .init(x: 0, y: 0)
+            ),
+            Wall(
+                hitbox: .init(size: .init(width: 20, height: 20), center: .init(x: 140, y: 0), angle: .degrees(0)),
+                velocity: .init(x: 0, y: 0)
+            ),
+            Wall(
+                hitbox: .init(size: .init(width: 20, height: 20), center: .init(x: 160, y: 0), angle: .degrees(0)),
+                velocity: .init(x: 0, y: 0)
+            ),
+            Wall(
                 hitbox: .init(size: .init(width: 100, height: 200), center: .init(x: 300, y: 0), angle: .degrees(0)),
                 velocity: .zero
             )

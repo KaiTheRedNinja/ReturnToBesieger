@@ -115,34 +115,7 @@ struct LineLineHitInteraction: HitInteraction {
     typealias HitBox1 = LineSegment
     typealias HitBox2 = LineSegment
 
-    func intersects(hitBox1: LineSegment, hitBox2: LineSegment) -> Bool {
-        /* python code for intersects, found on StackOverflow
-         def ccw(A, B, C):
-         """
-         Determine if three points are listed in a counterclockwise order.
-
-         If the slope of the line AB is less than the slope of the
-         line AC, then the three points are listed in a counterclockwise order.
-         """
-         return (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x)
-
-         def intersect(A, B, C, D):
-         """Return true if line segments AB and CD intersect."""
-         return ccw(A, C, D) != ccw(B, C, D) and ccw(A, B, C) != ccw(A, B, D)
-         */
-
-        func ccw(pointA: CGPoint, pointB: CGPoint, pointC: CGPoint) -> Bool {
-            (pointC.y - pointA.y) * (pointB.x - pointA.x) > (pointB.y - pointA.y) * (pointC.x - pointA.x)
-        }
-
-        // given two lines AB and CD, use the clockwise/anticlockwise equation to determine if they intersect
-        return ccw(pointA: hitBox1.point1, pointB: hitBox2.point1, pointC: hitBox2.point2) // A C D
-            != ccw(pointA: hitBox1.point2, pointB: hitBox2.point1, pointC: hitBox2.point2) // B C D
-            && ccw(pointA: hitBox1.point1, pointB: hitBox1.point2, pointC: hitBox2.point1) // A B C
-            != ccw(pointA: hitBox1.point1, pointB: hitBox1.point2, pointC: hitBox2.point2) // A B D
-    }
-
-    func normalUnitVector(to hitBox1: LineSegment, from hitBox2: LineSegment) -> CGPoint {
+    func interceptFor(line1: LineSegment, line2: LineSegment) -> CGPoint? {
         // determine the normal for the intersection of two lines
         // first we determine the intercept
 
@@ -150,23 +123,56 @@ struct LineLineHitInteraction: HitInteraction {
         // Line 1: A1 + t1 * u1
         // Line 2: A2 + t2 * u2
         // t1 can be found using cramer's rule:
-        let a1 = hitBox1.point1
-        let u1 = hitBox1.point2 - hitBox1.point1
-        let a2 = hitBox2.point1
-        let u2 = hitBox2.point2 - hitBox2.point1
-        guard u1 != .zero, u2 != .zero else { return .zero } // points cannot intercept lines, nor each other
+        let a1 = line1.point1
+        let u1 = line1.point2 - line1.point1
+        let a2 = line2.point1
+        let u2 = line2.point2 - line2.point1
+        guard u1 != .zero, u2 != .zero else { return nil } // points cannot intercept lines, nor each other
         let numerator = (a2.x - a1.x)*(-u2.y) - (a2.y - a1.y)*(-u2.x)
         let denominator = (u1.x * -u2.y) - (u1.y * -u2.x)
-        guard denominator != .zero else { return .zero } // parallel lines cannot intercept each other.
+        guard denominator != .zero else {
+            // the lines are parallel, it either doesnt intercept or it might intercept at many points.
+            // determine if they are colinear by using (x2 - x1)(y3 - y1) - (y2 - y1)(x3 - x1) == 0
+            let isColinear = (line1.point2.x - line1.point1.x)*(line2.point1.y - line1.point1.y) - (line1.point2.y - line1.point1.y)*(line2.point1.x - line1.point1.x) == 0
+            if !isColinear {
+                // not colinear, won't intersect
+                return nil
+            }
+            // is colinear, see if it has an overlapping range. If so, return the midpoint
+            let uhat = u1.unitVec()
+            let range1 = (line1.point1.dot(uhat))...(line1.point2.dot(uhat))
+            let range2 = (line2.point1.dot(uhat))...(line2.point2.dot(uhat))
+            let rangeLower = max(range1.lowerBound, range2.lowerBound)
+            let rangeUpper = min(range1.upperBound, range2.upperBound)
+            if rangeLower > rangeUpper {
+                // doesn't overlap, won't intersect
+                return nil
+            }
+            // get the average of the range and recompute the intersect based on that
+            let average = (rangeLower + rangeUpper) / 2
+            return a1 - a1.dot(uhat) * uhat + average * uhat
+        }
         let t1 = numerator / denominator
         // t1 must be within bounds
-        guard 0 <= t1, t1 <= 1 else { return .zero }
+        guard 0 <= t1, t1 <= 1 else { return nil }
         // calculate the location of the intercept
         let intercept = a1 + t1 * u1
         // using intercept = A2 + t2 * u2, determine t2
         let t2 = (intercept - a2).dot(u2.unitVec()) / u2.magnitude
         // t2 must be within bounds
-        guard 0 <= t2, t2 <= 1 else { return .zero }
+        guard 0 <= t2, t2 <= 1 else { return nil }
+        return intercept
+    }
+
+    func intersects(hitBox1: LineSegment, hitBox2: LineSegment) -> Bool {
+        return interceptFor(line1: hitBox1, line2: hitBox2) != nil
+    }
+
+    func normalUnitVector(to hitBox1: LineSegment, from hitBox2: LineSegment) -> CGPoint {
+        guard let intercept = interceptFor(line1: hitBox1, line2: hitBox2) else {
+            // lines do not intercept each other
+            return .zero
+        }
 
         // we determine the line with the largest end distance to the intercept
         let line1Dist = min((hitBox1.point1 - intercept).magnitude, (hitBox1.point2 - intercept).magnitude)
@@ -179,10 +185,10 @@ struct LineLineHitInteraction: HitInteraction {
 
         let lineNormal = if line1Dist > line2Dist {
             // line 1 is larger, we return a vector along line 1's normal, but in the direction of line 2 to line 1
-            u1.rotating(acw: .degrees(90)).unitVec()
+            (hitBox1.point2 - hitBox1.point1).rotating(acw: .degrees(90)).unitVec()
         } else {
             // line 2 is larger, we return a vector along line 2's normal, but in the direction of line 2 to line 1
-            u2.rotating(acw: .degrees(90)).unitVec()
+            (hitBox2.point2 - hitBox2.point1).rotating(acw: .degrees(90)).unitVec()
         }
 
         return (rawOffset.dot(lineNormal) * lineNormal).unitVec()
