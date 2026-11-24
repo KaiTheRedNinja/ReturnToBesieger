@@ -41,9 +41,9 @@ class PhysicsManager {
                 guard object1.hitbox.frame.intersects(object2.hitbox.frame) else { continue }
 
                 // check for a collision
-                guard let normalCandidate = normalOfCollision(object1: object1, object2: object2) else { continue }
-                // the normal must be in the opposite direction of the velocity
-                guard normalCandidate.dot(object1.velocity) < 0 else { continue }
+                guard let normalCandidate = normalOfCollision(hitBox1: object1.hitbox, hitBox2: object2.hitbox) else { continue }
+                // the normal must be in the opposite direction of the net velocity (object1's velocity adjusting for object 2 as stationary)
+                guard normalCandidate.dot(object1.velocity - object2.velocity) < 0 else { continue }
                 normal += normalCandidate
             }
             // if still zero, that means no collisions occured
@@ -62,36 +62,73 @@ class PhysicsManager {
     }
 
     /// Returns the normal vector of a collision, or `nil` if the objects do not collide.
-    func normalOfCollision(object1: any PhysicsObject, object2: any PhysicsObject) -> CGPoint? {
-//        // go over each hit type and see if any succeed
-//        for interactionCandidate in hitInteractions {
-//            do {
-//
-//            } catch {
-//                // the selected candidate does not work for this set of objects
-//                continue
-//            }
-//        }
+    func normalOfCollision(hitBox1: any HitBox, hitBox2: any HitBox) -> CGPoint? {
+        // do a trivial frame check first
+        guard hitBox1.frame.intersects(hitBox2.frame) else { return nil }
 
-        // for now, we only have ball-line and ball-ball collisions handled
-        if let circle = object1.hitbox as? CircleHitbox,
-           let rect = object2.hitbox as? RotatableRectangleHitbox {
-            var normal: CGPoint = .zero
-            for edge in rect.edges where edge.intersects(circle: circle) {
-                normal += edge.normalUnitVector(circle: circle)
+        // if object1 is a compound hitbox, break it up and check each individual segment
+        if let compound1 = hitBox1 as? CompoundHitbox {
+            let normal = compound1.lines.reduce(CGPoint.zero) { partialResult, segment in
+                partialResult + (normalOfCollision(
+                    hitBox1: segment,
+                    hitBox2: hitBox2
+                ) ?? .zero)
+            } + compound1.circles.reduce(CGPoint.zero) { partialResult, circle in
+                partialResult + (normalOfCollision(
+                    hitBox1: circle,
+                    hitBox2: hitBox2
+                ) ?? .zero)
             }
-            // if still zero, that means no collisions occured
-            guard normal != .zero else { return nil }
-            // normalise then return
-            return normal.unitVec()
-        } else if let circle1 = object1.hitbox as? CircleHitbox,
-                  let circle2 = object2.hitbox as? CircleHitbox {
-            // this is already a unit vector so no further processing needed
-            return circle2.normalUnitVector(circle: circle1)
-        } else {
-            // not handled yet
-            print("Interactions between \(object1) and \(object2) are not supported yet")
-            return nil
+            if normal == .zero { return nil }
+            return normal
         }
+        // same for hitbox 2
+        if let compound2 = hitBox2 as? CompoundHitbox {
+            let normal = compound2.lines.reduce(CGPoint.zero) { partialResult, segment in
+                partialResult + (normalOfCollision(
+                    hitBox1: hitBox1,
+                    hitBox2: segment
+                ) ?? .zero)
+            } + compound2.circles.reduce(CGPoint.zero) { partialResult, circle in
+                partialResult + (normalOfCollision(
+                    hitBox1: hitBox1,
+                    hitBox2: circle
+                ) ?? .zero)
+            }
+            if normal == .zero { return nil }
+            return normal
+        }
+
+        // we should have a single hitbox comparing to another single hitbox
+        // time to compare with our hit interactions
+        for hitInteraction in hitInteractions {
+            do {
+                let intersects = try hitInteraction.intersects(hitBox1: hitBox1, hitBox2: hitBox2)
+                // if it succeeded but returned false, they do not intersect, we return nil
+                guard intersects else { return nil }
+                // return the normal
+                return try hitInteraction.normalUnitVector(to: hitBox1, from: hitBox2)
+            } catch {
+                // did not succeed, try the next one
+                continue
+            }
+        }
+        // we try the exact same thing but swapping orders reverse
+        for hitInteraction in hitInteractions {
+            do {
+                let intersects = try hitInteraction.intersects(hitBox1: hitBox2, hitBox2: hitBox1)
+                // if it succeeded but returned false, they do not intersect, we return nil
+                guard intersects else { return nil }
+                // return the normal (but invert it to account for the flipped order)
+                return try -hitInteraction.normalUnitVector(to: hitBox2, from: hitBox1)
+            } catch {
+                // did not succeed, try the next one
+                continue
+            }
+        }
+
+        // not handled yet
+        print("Interactions between \(hitBox1) and \(hitBox2) are not supported yet")
+        return nil
     }
 }

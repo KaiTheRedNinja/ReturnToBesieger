@@ -14,6 +14,13 @@ protocol HitBox {
     var frame: CGRect { get }
 }
 
+protocol CompoundHitbox: HitBox {
+    /// The lines within this hitbox
+    var lines: [LineSegment] { get }
+    /// The circles within this hitbox
+    var circles: [CircleHitbox] { get }
+}
+
 struct CircleHitbox: HitBox {
     var radius: CGFloat
     var center: CGPoint
@@ -23,7 +30,7 @@ struct CircleHitbox: HitBox {
     }
 }
 
-struct RotatableRectangleHitbox: HitBox {
+struct RotatableRectangleHitbox: CompoundHitbox {
     var size: CGSize
     var center: CGPoint
     var angle: Angle
@@ -41,13 +48,16 @@ struct RotatableRectangleHitbox: HitBox {
     }
 
     /// The edges of the rotated rectangle
-    var edges: [LineSegment] {
+    var lines: [LineSegment] {
         var corners = corners
         corners.append(corners[0]) // wrap
         return (0..<4).map { index in
             .init(point1: corners[index], point2: corners[index+1])
         }
     }
+
+    /// No circles in this hitbox
+    var circles: [CircleHitbox] { [] }
 }
 
 struct LineSegment: HitBox {

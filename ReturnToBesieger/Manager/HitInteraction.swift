@@ -18,6 +18,11 @@ protocol HitInteraction {
     ///
     /// In this case, it is the first hitbox hitting the second hitbox.
     func normalUnitVector(to hitBox1: HitBox1, from hitBox2: HitBox2) -> CGPoint
+
+    /// Type-erased implementation of `intersects`
+    func intersects(hitBox1: any HitBox, hitBox2: any HitBox) throws(HitInteractionError) -> Bool
+    /// Type-erased implementation of `normalVector`
+    func normalUnitVector(to hitBox1: any HitBox, from hitBox2: any HitBox) throws(HitInteractionError) -> CGPoint
 }
 
 enum HitInteractionError: Error {
