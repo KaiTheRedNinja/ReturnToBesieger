@@ -14,10 +14,10 @@ protocol PhysicsObject: Identifiable {
     var id: UUID { get }
     /// The hitbox of the object
     var hitbox: HB { get set }
+    /// The mass of the object. A mass of `.infinity` implies an immovable object.
+    var mass: CGFloat { get }
     /// The velocity of the object
     var velocity: CGPoint { get set }
-    /// If this object is fixed. Fixed objects do not move and cannot be moved by collisions.
-    var isFixed: Bool { get }
 
     mutating func updateCenter(to newCenter: CGPoint)
 }
@@ -32,12 +32,12 @@ struct Ball: PhysicsObject {
     var id: UUID = .init()
     var hitbox: CircleHitbox
     var velocity: CGPoint
-    var isFixed: Bool { false }
+    var mass: CGFloat { .pi*hitbox.radius*hitbox.radius } // ball mass is equal to area
 }
 
 struct Wall: PhysicsObject {
     var id: UUID = .init()
     var hitbox: RotatableRectangleHitbox
     var velocity: CGPoint
-    var isFixed: Bool { true }
+    var mass: CGFloat { hitbox.size.width*hitbox.size.height } // wall mass is equal to area
 }

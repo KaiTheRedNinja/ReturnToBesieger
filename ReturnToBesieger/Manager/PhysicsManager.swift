@@ -24,38 +24,70 @@ class PhysicsManager {
         // move all objects
         var newObjects: [any PhysicsObject] = []
         for object in objects {
-            guard !object.isFixed else { newObjects.append(object); continue }
+            // don't bother trying to move an object with infinite mass
+            guard object.mass != .infinity else { newObjects.append(object); continue }
             var objectCopy = object
             objectCopy.updateCenter(to: object.hitbox.center + object.velocity)
             newObjects.append(objectCopy)
         }
 
-        // check for collisions. If there are, we revert the motion.
-        // O(n^2) when no collisions, slightly higher if there are.
-        for (index, object1) in newObjects.enumerated() {
-            var normal: CGPoint = .zero
-            for object2 in newObjects {
-                // skip if they're the same object
-                guard object2.id != object1.id else { continue }
-                // use a cheap hitbox check at first
-                guard object1.hitbox.frame.intersects(object2.hitbox.frame) else { continue }
+        // check for collisions. If there are, we calculate where they should move
+        // note that we assume that each object can only collide with one other object. This will probably result in
+        // phasing if an area gets cramped, but my brain too small to handle multi-object simultaneous collisions :(
 
-                // check for a collision
+        var collided: Set<UUID> = []
+        for (index1, object1) in newObjects.enumerated() {
+            guard !collided.contains(object1.id) else { continue }
+
+            var normal: CGPoint = .zero
+            var otherObject: (Int, any PhysicsObject)?
+            for (index2, object2) in newObjects.enumerated().dropFirst(index1+1) { // we can skip everything before the current object because its redundant
+                // if the other object has been collided (or is equal to object1), we can ignore it
+                guard !collided.contains(object2.id), object2.id != object1.id else { continue }
+                // check for a collision. The collision uses a cheap ABBA (? is that its name) frame detection first, so failure is
+                // pretty cheap
                 guard let normalCandidate = normalOfCollision(hitBox1: object1.hitbox, hitBox2: object2.hitbox) else { continue }
                 // the normal must be in the opposite direction of the net velocity (object1's velocity adjusting for object 2 as stationary)
                 guard normalCandidate.dot(object1.velocity - object2.velocity) < 0 else { continue }
-                normal += normalCandidate
+                normal = normalCandidate
+                otherObject = (index2, object2)
+                break
             }
             // if still zero, that means no collisions occured
-            guard normal != .zero else { continue }
+            guard normal != .zero, let (index2, object2) = otherObject else { continue }
             normal = normal.unitVec()
+            // add this object to collisions
+            collided.insert(object1.id)
+            collided.insert(object2.id)
 
-            // flip the velocity along the line perpendicular to the normal
-            var objectCopy = object1
-            let scale = objectCopy.velocity.dot(normal)
-            let newVelocity = objectCopy.velocity - 2 * (scale * normal)
-            objectCopy.velocity = newVelocity
-            newObjects[index] = objectCopy
+            // the two objects have collided. We make use of completely elastic collision to calculate their velocities:
+            //
+            // Conservation of linear momentum:     m1v1 + m2v2 = m1u1 + m2u2
+            // Conservation of mechanical energy:   v1 + u1 = v2 + u2
+
+            // only velocity in the direction of the normal actually change, so we split the velocities into normal and tangential components:
+            let object1Par = object1.velocity.dot(normal)
+            let object2Par = object2.velocity.dot(normal)
+            let object1TanVec = object1.velocity - (object1Par*normal) // these stay unchanged
+            let object2TanVec = object2.velocity - (object2Par*normal) // these stay unchanged
+
+            // following the laws of elastic collision (stolen from my physics notes):
+            // u1 = (v1(m1 - m2) + v2(2m2))/(m1+m2)
+            // u2 = v1 + u1 - v2
+            let object1ParFinal = (object1Par * (object1.mass - object2.mass) + object2Par * 2 * object2.mass)/(object1.mass + object2.mass)
+            let object2ParFinal = object1Par + object1ParFinal - object2Par
+
+            // combine parallel and tangential components back
+            let object1Final = object1ParFinal * normal + object1TanVec
+            let object2Final = object2ParFinal * normal + object2TanVec
+
+            // copy them back
+            var object1Copy = object1
+            object1Copy.velocity = object1Final
+            newObjects[index1] = object1Copy
+            var object2Copy = object2
+            object2Copy.velocity = object2Final
+            newObjects[index2] = object2Copy
         }
 
         self.objects = newObjects

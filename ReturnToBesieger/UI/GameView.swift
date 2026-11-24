@@ -16,8 +16,8 @@ struct GameView: View {
                 velocity: .init(x: 1, y: 0)
             ),
             Ball(
-                hitbox: .init(radius: 20, center: .init(x: 100, y: 30)),
-                velocity: .init(x: -1, y: 0)
+                hitbox: .init(radius: 20, center: .init(x: 100, y: 20)),
+                velocity: .init(x: 0, y: 0)
             )
 //            Wall(
 //                hitbox: .init(size: .init(width: 100, height: 200), center: .init(x: 200, y: 10), angle: .degrees(45)),
