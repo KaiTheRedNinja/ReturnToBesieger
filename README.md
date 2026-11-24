@@ -9,13 +9,20 @@ I want to learn how to make a physics engine. Balls on rectangular walls is one 
 
 ## Feature plan
 Physics sim:
-- [ ] Balls
-- [ ] Rectangles
-  - [ ] Grid-aligned
-  - [ ] Arbitrary rotation
-- [ ] Movement using delta-time
-- [ ] Ball-rectangle collision detection
-  - [ ] Normal vector calculation
+- [x] Balls
+- [x] Rectangles
+  - [x] Grid-aligned
+  - [x] Arbitrary rotation
+- [x] Movement using delta-time
+- [x] Collisions
+  - [x] Ball-rectangle collision detection
+  - [x] Ball-ball collision detection
+  - [x] Rectangle-rectangle collision detection
+  - [ ] Normal vector
+  - [ ] Point of collision
+  - [x] Perfectly elastic collisions
+  - [ ] Collisions with rotation
+- [ ] Friction (with the floor)
 
 Game:
 - [ ] Render screen

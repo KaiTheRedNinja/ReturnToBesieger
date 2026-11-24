@@ -48,6 +48,14 @@ extension CGPoint: @retroactive AdditiveArithmetic {
     public func dot(_ rhs: Self) -> CGFloat {
         self.x * rhs.x + self.y * rhs.y
     }
+    /// Performs the cross product operation on this value and another. Returns the resultant magnitude, as CGPoint is only 2D.
+    public func crossMagnitude(rhs: Self) -> CGFloat {
+        // c = a x b = | i  j  k | = i | a2 0 | - j | a1 0 | + k | a1 a2 | = k ( a1 * b2 - a2 * b1 )
+        //             | a1 a2 0 |     | b2 0 |     | b1 0 |     | b1 b2 |
+        //             | b1 b2 0 |
+        return self.x * rhs.y - self.y * rhs.x
+    }
+
     /// Obtains the unit vector of this vector
     public func unitVec() -> CGPoint {
         .init(x: x / magnitude, y: y / magnitude)

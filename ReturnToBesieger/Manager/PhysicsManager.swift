@@ -12,7 +12,8 @@ class PhysicsManager {
     var objects: [any PhysicsObject] = []
     var hitInteractions: [any HitInteraction] = [
         CircleCircleHitInteraction(),
-        CircleLineHitInteraction()
+        CircleLineHitInteraction(),
+        LineLineHitInteraction()
     ]
 
     init(objects: [any PhysicsObject] = []) {
