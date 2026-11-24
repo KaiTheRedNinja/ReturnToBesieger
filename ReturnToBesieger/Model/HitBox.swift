@@ -29,6 +29,21 @@ struct CircleHitbox: HitBox {
         // points within the circle are <= r^2 instead
         (point.x - center.x) * (point.x - center.x) + (point.y - center.y) * (point.y - center.y) <= radius*radius
     }
+
+    /// Determines if two circles intersect
+    func intersects(circle: CircleHitbox) -> Bool {
+        // the distance between the two circles must be less than the radius
+        // but more than their difference (otherwise they are concentric)
+        let centerDistance = (circle.center - self.center).magnitude
+        return abs(circle.radius - self.radius) < centerDistance && centerDistance < (circle.radius + self.radius)
+    }
+
+    /// Determines the normal vector of a collision with another circle. This will point from self to the other circle.
+    func normalUnitVector(circle: CircleHitbox) -> CGPoint {
+        // its literally just the vector from the center of one to the center of another....
+        let offsetVector = circle.center - self.center
+        return offsetVector.unitVec()
+    }
 }
 
 struct RotatableRectangleHitbox: HitBox {

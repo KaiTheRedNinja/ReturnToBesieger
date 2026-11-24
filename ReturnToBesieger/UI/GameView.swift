@@ -15,10 +15,14 @@ struct GameView: View {
                 hitbox: .init(radius: 30, center: .init(x: 0, y: 0)),
                 velocity: .init(x: 1, y: 0)
             ),
-            Wall(
-                hitbox: .init(size: .init(width: 100, height: 200), center: .init(x: 200, y: 10), angle: .degrees(45)),
-                velocity: .zero
+            Ball(
+                hitbox: .init(radius: 20, center: .init(x: 100, y: 30)),
+                velocity: .init(x: -1, y: 0)
             )
+//            Wall(
+//                hitbox: .init(size: .init(width: 100, height: 200), center: .init(x: 200, y: 10), angle: .degrees(45)),
+//                velocity: .zero
+//            )
         ]
     )
 
@@ -34,17 +38,17 @@ struct GameView: View {
                     } else if let wall = object as? Wall {
                         Rectangle()
                             .frame(width: wall.hitbox.size.width, height: wall.hitbox.size.height)
-                            .rotationEffect(-wall.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
+                            .rotationEffect(wall.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
                     }
                 }
-                .offset(x: object.hitbox.center.x, y: object.hitbox.center.y)
+                .offset(x: object.hitbox.center.x, y: -object.hitbox.center.y)
 
                 if let wall = object as? Wall {
                     ForEach(wall.hitbox.corners.enumerated(), id: \.offset) { (_, corner) in
                         Circle()
                             .fill(.blue)
                             .frame(width: 10, height: 10)
-                            .offset(x: corner.x, y: corner.y)
+                            .offset(x: corner.x, y: -corner.y)
                     }
                 }
             }

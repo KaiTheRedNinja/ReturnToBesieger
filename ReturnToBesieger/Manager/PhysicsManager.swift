@@ -59,7 +59,7 @@ class PhysicsManager {
 
     /// Returns the normal vector of a collision, or `nil` if the objects do not collide.
     func normalOfCollision(object1: any PhysicsObject, object2: any PhysicsObject) -> CGPoint? {
-        // for now, we only have ball-line collisions handled
+        // for now, we only have ball-line and ball-ball collisions handled
         if let circle = object1.hitbox as? CircleHitbox,
            let rect = object2.hitbox as? RotatableRectangleHitbox {
             var normal: CGPoint = .zero
@@ -70,6 +70,10 @@ class PhysicsManager {
             guard normal != .zero else { return nil }
             // normalise then return
             return normal.unitVec()
+        } else if let circle1 = object1.hitbox as? CircleHitbox,
+                  let circle2 = object2.hitbox as? CircleHitbox {
+            // this is already a unit vector so no further processing needed
+            return circle2.normalUnitVector(circle: circle1)
         } else {
             // not handled yet
             print("Interactions between \(object1) and \(object2) are not supported yet")
