@@ -10,6 +10,8 @@ import SwiftUI
 protocol HitBox {
     /// The center of the object. This may be manipulated externally for movement.
     var center: CGPoint { get set }
+    /// The angle of this hitbox. This may be manipulated externall for movement.
+    var angle: Angle { get set }
     /// The frame of the object, that contains the whole of the object
     var frame: CGRect { get }
 }
@@ -24,6 +26,7 @@ protocol CompoundHitbox: HitBox {
 struct CircleHitbox: HitBox {
     var radius: CGFloat
     var center: CGPoint
+    var angle: Angle { get { .zero } set { } }
 
     var frame: CGRect {
         .init(center: center, size: .init(width: radius*2, height: radius*2))
@@ -63,6 +66,7 @@ struct RotatableRectangleHitbox: CompoundHitbox {
 struct LineSegment: HitBox {
     var point1: CGPoint
     var point2: CGPoint
+    var angle: Angle { get { .zero } set { } } // consider if we want to actually populate this
 
     var center: CGPoint {
         get {

@@ -33,11 +33,12 @@ class PhysicsManager {
         self.delegate = delegate
     }
 
-    /// Informs the physics manager that the given object's hitbox and/or velocity should be changed
-    func changeObjectProperties(_ objectId: UUID, center: CGPoint?, velocity: CGPoint?) {
+    /// Informs the physics manager that the given object's hitbox, angle, and/or velocity should be changed.
+    func changeObjectProperties(_ objectId: UUID, center: CGPoint? = nil, angle: Angle? = nil, velocity: CGPoint? = nil) {
         guard let index = objects.firstIndex(where: { $0.id == objectId }) else { return }
         var objectCopy = objects[index]
         if let center { objectCopy.updateCenter(to: center) }
+        if let angle { objectCopy.updateAngle(to: angle) }
         if let velocity { objectCopy.velocity = velocity }
         objects[index] = objectCopy
     }

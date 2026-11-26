@@ -195,18 +195,23 @@ struct PhysicsManualMoveTarget<Content: View>: View {
         ZStack {
             content
         }
-//            .simultaneousGesture(
-//                RotationGesture()
-//                    .onChanged { angle in
-//                        if preservedPosition == nil {
-//                            preservedPosition =
-//                        }
-//                        print("Angle rotated to: \(angle.degrees)")
-//                    }
-//                    .onEnded { angle in
-//                        print("Angle stopped at: \(angle.degrees)")
-//                    }
-//            )
+        .simultaneousGesture(
+            RotationGesture()
+                .onChanged { angle in
+                    if preservedAngle == nil {
+                        preservedAngle = object.hitbox.angle
+                    }
+                    manager.changeObjectProperties(object.id, angle: preservedAngle! + angle)
+                    print("Angle rotated to: \(angle.degrees)")
+                }
+                .onEnded { angle in
+                    defer {
+                        preservedAngle = nil
+                    }
+                    manager.changeObjectProperties(object.id, angle: preservedAngle! + angle)
+                    print("Angle stopped at: \(angle.degrees)")
+                }
+        )
         .simultaneousGesture(
             DragGesture(coordinateSpace: .named("game"))
                 .onChanged { value in
@@ -220,7 +225,7 @@ struct PhysicsManualMoveTarget<Content: View>: View {
                         // v = s / t = (1/t) * s
                         (1 / now.timeIntervalSince(lastDragTime)) * (preservedPosition! + displacement - object.hitbox.center)
                     } else { nil }
-                    print("Displacement changed to: \(displacement), speed \(newVelocity)")
+                    print("Displacement changed to: \(displacement)")
                     throwVelocity = newVelocity
                     manager.changeObjectProperties(
                         object.id,

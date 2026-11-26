@@ -23,11 +23,15 @@ protocol PhysicsObject: Identifiable {
     var dragCoefficient: CGFloat { get }
 
     mutating func updateCenter(to newCenter: CGPoint)
+    mutating func updateAngle(to newAngle: Angle)
 }
 
 extension PhysicsObject {
     mutating func updateCenter(to newCenter: CGPoint) {
         self.hitbox.center = newCenter
+    }
+    mutating func updateAngle(to newAngle: Angle) {
+        self.hitbox.angle = newAngle
     }
 }
 
@@ -84,10 +88,10 @@ struct WallObstacle: PhysicsObject {
     var dragCoefficient: CGFloat { 5.0 }
     var density: CGFloat {
         switch kind {
-        case .wood: 1.0
-        case .stone: 5.0
-        case .metal: 10.0
-        case .magical: .infinity
+        case .wood: 5.0
+        case .stone: 25.0
+        case .metal: 50.0
+        case .magical: 1_000_000
         }
     }
     var mass: CGFloat { density * hitbox.size.width*hitbox.size.height }
