@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 @Observable
 class PhysicsManager {
     var objects: [any PhysicsObject] = []
@@ -17,9 +18,19 @@ class PhysicsManager {
     ]
     /// NOTE: this physics manager is a top-down view, gravity is only used for friction purposes
     var gravity: CGFloat = 0
+    /// The bounds of the simulation. When an object completely exits the bounds, the delegate is informed.
+    var bounds: CGRect = .init(center: .zero, size: screenSize)
+    /// The delegate, which is informed of collisions.
+    var delegate: (any PhysicsManagerDelegate)?
 
-    init(objects: [any PhysicsObject] = []) {
+    init(
+        objects: [any PhysicsObject] = [],
+        bounds: CGRect = .init(center: .zero, size: screenSize),
+        delegate: (any PhysicsManagerDelegate)? = nil
+    ) {
         self.objects = objects
+        self.bounds = bounds
+        self.delegate = delegate
     }
 
     /// Updates all of the objects. Note that you must NOT remove or add objects during an update.
@@ -100,6 +111,17 @@ class PhysicsManager {
         }
 
         self.objects = newObjects
+
+        // update the delegate
+        for ids in collided {
+            guard ids.count == 2 else { continue }
+            let collidedObjects = ids.compactMap { id in objects.first(where: { $0.id == id }) }
+            guard collidedObjects.count == 2 else { continue }
+            delegate?.objectsDidCollide(object1: collidedObjects[0], object2: collidedObjects[1])
+        }
+        for object in objects where !bounds.contains(object.hitbox.frame) {
+            delegate?.objectDidExitBounds(object: object)
+        }
     }
 
     /// Returns the normal vector of a collision, or `nil` if the objects do not collide.
@@ -172,4 +194,9 @@ class PhysicsManager {
         print("Interactions between \(hitBox1) and \(hitBox2) are not supported yet")
         return nil
     }
+}
+
+protocol PhysicsManagerDelegate {
+    func objectsDidCollide(object1: any PhysicsObject, object2: any PhysicsObject)
+    func objectDidExitBounds(object: any PhysicsObject)
 }

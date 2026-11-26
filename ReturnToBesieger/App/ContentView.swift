@@ -1,7 +1,7 @@
 import SwiftUI
 import Playgrounds
 
-let screenSize: CGSize = .init(width: 1920, height: 1080)
+nonisolated let screenSize: CGSize = .init(width: 1920, height: 1080)
 
 struct ContentView: View {
     var body: some View {
