@@ -81,7 +81,7 @@ struct WallObstacle: PhysicsObject {
     var kind: ObstacleKind
     var hitbox: RotatableRectangleHitbox
     var velocity: CGPoint
-    var dragCoefficient: CGFloat { 1.0 }
+    var dragCoefficient: CGFloat { 5.0 }
     var density: CGFloat {
         switch kind {
         case .wood: 1.0

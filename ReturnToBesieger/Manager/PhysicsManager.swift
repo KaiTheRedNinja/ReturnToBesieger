@@ -17,7 +17,7 @@ class PhysicsManager {
         LineLineHitInteraction()
     ]
     /// NOTE: this physics manager is a top-down view, gravity is only used for friction purposes
-    var gravity: CGFloat = 0
+    var gravity: CGFloat = 100
     /// The bounds of the simulation. When an object completely exits the bounds, the delegate is informed.
     var bounds: CGRect = .init(center: .zero, size: screenSize)
     /// The delegate, which is informed of collisions.
@@ -33,6 +33,15 @@ class PhysicsManager {
         self.delegate = delegate
     }
 
+    /// Informs the physics manager that the given object's hitbox and/or velocity should be changed
+    func changeObjectProperties(_ objectId: UUID, center: CGPoint?, velocity: CGPoint?) {
+        guard let index = objects.firstIndex(where: { $0.id == objectId }) else { return }
+        var objectCopy = objects[index]
+        if let center { objectCopy.updateCenter(to: center) }
+        if let velocity { objectCopy.velocity = velocity }
+        objects[index] = objectCopy
+    }
+
     /// Updates all of the objects. Note that you must NOT remove or add objects during an update.
     func update(dt: TimeInterval) {
         // move all objects
@@ -42,7 +51,7 @@ class PhysicsManager {
             // determine the vector force of friction, and reduce velocity as needed
             if object.velocity != .zero {
                 let frictionAcceleration = object.dragCoefficient * gravity * (-object.velocity.unitVec())
-                let newVelocity = object.velocity - frictionAcceleration
+                let newVelocity = object.velocity + dt * frictionAcceleration
                 if newVelocity.dot(object.velocity.unitVec()) < 0 {
                     // friction has caused this object to stop
                     objectCopy.velocity = .zero
@@ -52,7 +61,7 @@ class PhysicsManager {
                 }
             }
             // update the displacement
-            objectCopy.updateCenter(to: object.hitbox.center + objectCopy.velocity)
+            objectCopy.updateCenter(to: object.hitbox.center + dt * objectCopy.velocity)
             newObjects.append(objectCopy)
         }
 

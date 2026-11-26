@@ -11,34 +11,35 @@ import Combine
 struct GameView: View {
     @State var physics: PhysicsManager = .init(
         objects: [
-            Ball(
-                hitbox: .init(radius: 20, center: .init(x: 0, y: 0)),
-                velocity: .init(x: 1, y: 0)
-            ),
-            Ball(
-                hitbox: .init(radius: 20, center: .init(x: 100, y: 0)),
-                velocity: .init(x: 0, y: 0)
-            ),
-            Ball(
-                hitbox: .init(radius: 20, center: .init(x: 140, y: 0)),
-                velocity: .init(x: 0, y: 0)
-            ),
-            Ball(
-                hitbox: .init(radius: 20, center: .init(x: 180, y: 0)),
-                velocity: .init(x: 0, y: 0)
-            ),
-            Ball(
-                hitbox: .init(radius: 20, center: .init(x: 220, y: 0)),
-                velocity: .init(x: 0, y: 0)
-            ),
-            Wall(
-                hitbox: .init(size: .init(width: 100, height: 200), center: .init(x: 300, y: 0), angle: .degrees(0)),
-                velocity: .zero
-            )
+//            Ball(
+//                hitbox: .init(radius: 20, center: .init(x: 0, y: 0)),
+//                velocity: .init(x: 1, y: 0)
+//            ),
+//            Ball(
+//                hitbox: .init(radius: 20, center: .init(x: 100, y: 0)),
+//                velocity: .init(x: 0, y: 0)
+//            ),
+//            Ball(
+//                hitbox: .init(radius: 20, center: .init(x: 140, y: 0)),
+//                velocity: .init(x: 0, y: 0)
+//            ),
+//            Ball(
+//                hitbox: .init(radius: 20, center: .init(x: 180, y: 0)),
+//                velocity: .init(x: 0, y: 0)
+//            ),
+//            Ball(
+//                hitbox: .init(radius: 20, center: .init(x: 220, y: 0)),
+//                velocity: .init(x: 0, y: 0)
+//            ),
+//            Wall(
+//                hitbox: .init(size: .init(width: 100, height: 200), center: .init(x: 300, y: 0), angle: .degrees(0)),
+//                velocity: .zero
+//            )
+            WallObstacle(kind: .metal, hitbox: .init(size: .init(width: 200, height: 400), center: .zero, angle: .degrees(10)), velocity: .init(x: 3, y: 0))
         ]
     )
 
-    @State var gameClock = Timer.publish(every: 1/60, on: .main, in: .default).autoconnect()
+    @State var gameClock = Timer.publish(every: 1/60, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack {
@@ -49,6 +50,7 @@ struct GameView: View {
         .onReceive(gameClock) { _ in
             physics.update(dt: 1/60)
         }
+        .coordinateSpace(.named("game"))
     }
 
     func viewFor(object: any PhysicsObject) -> some View {
@@ -57,6 +59,10 @@ struct GameView: View {
                 viewFor(ball: ball)
             } else if let wall = object as? Wall {
                 viewFor(wall: wall)
+            } else if let ballProjectile = object as? BallProjectile {
+                viewFor(ballProjectile: ballProjectile)
+            } else if let wallObstacle = object as? WallObstacle {
+                viewFor(wallObstacle: wallObstacle)
             }
         }
         .offset(x: object.hitbox.center.x, y: -object.hitbox.center.y)
@@ -118,7 +124,7 @@ struct GameView: View {
     }
 
     func viewFor(wallObstacle: WallObstacle) -> some View {
-        Group {
+        PhysicsManualMoveTarget(object: wallObstacle, manager: physics) {
             switch wallObstacle.kind {
             case .wood:
                 Rectangle()
@@ -158,6 +164,79 @@ struct GameView: View {
         }
         .frame(width: wallObstacle.hitbox.size.width, height: wallObstacle.hitbox.size.height)
         .rotationEffect(wallObstacle.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
+    }
+}
+
+struct PhysicsManualMoveTarget<Content: View>: View {
+    var object: any PhysicsObject
+    var manager: PhysicsManager
+    var content: Content
+
+    @State private var preservedPosition: CGPoint?
+    @State private var preservedAngle: Angle?
+
+    @State private var lastDragTime: Date?
+    @State private var throwVelocity: CGPoint?
+
+    init(object: any PhysicsObject, manager: PhysicsManager, @ViewBuilder content: () -> Content) {
+        self.object = object
+        self.manager = manager
+        self.content = content()
+    }
+
+    var body: some View {
+        ZStack {
+            content
+        }
+//            .simultaneousGesture(
+//                RotationGesture()
+//                    .onChanged { angle in
+//                        if preservedPosition == nil {
+//                            preservedPosition =
+//                        }
+//                        print("Angle rotated to: \(angle.degrees)")
+//                    }
+//                    .onEnded { angle in
+//                        print("Angle stopped at: \(angle.degrees)")
+//                    }
+//            )
+        .simultaneousGesture(
+            DragGesture(coordinateSpace: .named("game"))
+                .onChanged { value in
+                    let now = Date.now
+                    defer { lastDragTime = now }
+                    if preservedPosition == nil {
+                        preservedPosition = object.hitbox.center
+                    }
+                    let displacement = CGPoint(x: value.translation.width, y: -value.translation.height)
+                    let newVelocity: CGPoint? = if let lastDragTime, lastDragTime < now {
+                        // v = s / t = (1/t) * s
+                        (1 / now.timeIntervalSince(lastDragTime)) * (preservedPosition! + displacement - object.hitbox.center)
+                    } else { nil }
+                    print("Displacement changed to: \(displacement), speed \(newVelocity)")
+                    throwVelocity = newVelocity
+                    manager.changeObjectProperties(
+                        object.id,
+                        center: preservedPosition! + displacement,
+                        velocity: .zero
+                    )
+                }
+                .onEnded { value in
+                    defer {
+                        lastDragTime = nil
+                        preservedPosition = nil
+                        throwVelocity = nil
+                    }
+
+                    print("Displacement stopped at: \(value.translation)")
+                    let displacement = CGPoint(x: value.translation.width, y: -value.translation.height)
+                    manager.changeObjectProperties(
+                        object.id,
+                        center: preservedPosition! + displacement,
+                        velocity: throwVelocity
+                    )
+                }
+        )
     }
 }
 
