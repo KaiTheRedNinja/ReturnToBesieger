@@ -35,7 +35,14 @@ struct GameView: View {
 //                hitbox: .init(size: .init(width: 100, height: 200), center: .init(x: 300, y: 0), angle: .degrees(0)),
 //                velocity: .zero
 //            )
-            WallObstacle(kind: .metal, hitbox: .init(size: .init(width: 200, height: 400), center: .zero, angle: .degrees(10)), velocity: .init(x: 3, y: 0))
+            BallProjectile(kind: .rock, hitbox: .init(radius: 20, center: .init(x: -200, y: 100)), velocity: .zero),
+            BallProjectile(kind: .cannonball, hitbox: .init(radius: 20, center: .init(x: -200, y: 0)), velocity: .zero),
+            BallProjectile(kind: .fireball, hitbox: .init(radius: 20, center: .init(x: -200, y: -100)), velocity: .zero),
+
+            WallObstacle(kind: .wood, hitbox: .init(size: .init(width: 100, height: 100), center: .init(x: 0, y: 200), angle: .degrees(0)), velocity: .init(x: 0, y: 0)),
+            WallObstacle(kind: .stone, hitbox: .init(size: .init(width: 100, height: 100), center: .init(x: 0, y: 75), angle: .degrees(0)), velocity: .init(x: 0, y: 0)),
+            WallObstacle(kind: .metal, hitbox: .init(size: .init(width: 100, height: 100), center: .init(x: 0, y: -75), angle: .degrees(0)), velocity: .init(x: 0, y: 0)),
+            WallObstacle(kind: .magical, hitbox: .init(size: .init(width: 100, height: 100), center: .init(x: 0, y: -200), angle: .degrees(0)), velocity: .init(x: 0, y: 0))
         ]
     )
 
@@ -89,7 +96,7 @@ struct GameView: View {
     }
 
     func viewFor(ballProjectile: BallProjectile) -> some View {
-        Group {
+        PhysicsManualMoveTarget(object: ballProjectile, manager: physics) {
             switch ballProjectile.kind {
             case .rock:
                 Circle()
@@ -107,7 +114,7 @@ struct GameView: View {
                     )
                     .stroke(Color.black, lineWidth: 2)
             case .fireball:
-                Star(corners: 20, smoothness: 0.2)
+                Star(corners: 10, smoothness: 0.5)
                     .fill(
                         RadialGradient(
                             colors: [.yellow, .orange, .red],
