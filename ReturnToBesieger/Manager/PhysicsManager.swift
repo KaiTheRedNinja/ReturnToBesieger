@@ -15,6 +15,8 @@ class PhysicsManager {
         CircleLineHitInteraction(),
         LineLineHitInteraction()
     ]
+    /// NOTE: this physics manager is a top-down view, gravity is only used for friction purposes
+    var gravity: CGFloat = 0
 
     init(objects: [any PhysicsObject] = []) {
         self.objects = objects
@@ -25,10 +27,21 @@ class PhysicsManager {
         // move all objects
         var newObjects: [any PhysicsObject] = []
         for object in objects {
-            // don't bother trying to move an object with infinite mass
-            guard object.mass != .infinity else { newObjects.append(object); continue }
             var objectCopy = object
-            objectCopy.updateCenter(to: object.hitbox.center + object.velocity)
+            // determine the vector force of friction, and reduce velocity as needed
+            if object.velocity != .zero {
+                let frictionAcceleration = object.dragCoefficient * gravity * (-object.velocity.unitVec())
+                let newVelocity = object.velocity - frictionAcceleration
+                if newVelocity.dot(object.velocity.unitVec()) < 0 {
+                    // friction has caused this object to stop
+                    objectCopy.velocity = .zero
+                } else {
+                    // friction has caused this object to slow, but not stop outright
+                    objectCopy.velocity = newVelocity
+                }
+            }
+            // update the displacement
+            objectCopy.updateCenter(to: object.hitbox.center + objectCopy.velocity)
             newObjects.append(objectCopy)
         }
 

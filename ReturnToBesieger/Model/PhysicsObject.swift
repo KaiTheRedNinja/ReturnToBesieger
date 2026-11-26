@@ -18,6 +18,9 @@ protocol PhysicsObject: Identifiable {
     var mass: CGFloat { get }
     /// The velocity of the object
     var velocity: CGPoint { get set }
+    /// The drag coefficient with the ground. 0 means the object experiences no friction.
+    /// Acceleration is equal to `-drag * gravity` where gravity is defined as 10.
+    var dragCoefficient: CGFloat { get }
 
     mutating func updateCenter(to newCenter: CGPoint)
 }
@@ -32,6 +35,7 @@ struct Ball: PhysicsObject {
     var id: UUID = .init()
     var hitbox: CircleHitbox
     var velocity: CGPoint
+    var dragCoefficient: CGFloat { 0 }
     var mass: CGFloat { .pi*hitbox.radius*hitbox.radius } // ball mass is equal to area
 }
 
@@ -39,6 +43,7 @@ struct Wall: PhysicsObject {
     var id: UUID = .init()
     var hitbox: RotatableRectangleHitbox
     var velocity: CGPoint
+    var dragCoefficient: CGFloat { 1.0 }
     var mass: CGFloat { hitbox.size.width*hitbox.size.height } // wall mass is equal to area
 }
 
@@ -53,6 +58,7 @@ struct BallProjectile: PhysicsObject {
     var kind: ProjectileKind
     var hitbox: CircleHitbox
     var velocity: CGPoint
+    var dragCoefficient: CGFloat { 0 }
     var density: CGFloat {
         switch kind {
         case .rock: 1.0
@@ -75,6 +81,7 @@ struct WallObstacle: PhysicsObject {
     var kind: ObstacleKind
     var hitbox: RotatableRectangleHitbox
     var velocity: CGPoint
+    var dragCoefficient: CGFloat { 1.0 }
     var density: CGFloat {
         switch kind {
         case .wood: 1.0
