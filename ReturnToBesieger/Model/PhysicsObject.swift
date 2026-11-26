@@ -41,3 +41,47 @@ struct Wall: PhysicsObject {
     var velocity: CGPoint
     var mass: CGFloat { hitbox.size.width*hitbox.size.height } // wall mass is equal to area
 }
+
+struct BallProjectile: PhysicsObject {
+    enum ProjectileKind {
+        case rock
+        case cannonball
+        case fireball
+    }
+
+    var id: UUID = .init()
+    var kind: ProjectileKind
+    var hitbox: CircleHitbox
+    var velocity: CGPoint
+    var density: CGFloat {
+        switch kind {
+        case .rock: 1.0
+        case .cannonball: 5.0
+        case .fireball: 10.0
+        }
+    }
+    var mass: CGFloat { density * .pi*hitbox.radius*hitbox.radius }
+}
+
+struct WallObstacle: PhysicsObject {
+    enum ObstacleKind {
+        case wood
+        case stone
+        case metal
+        case magical
+    }
+
+    var id: UUID = .init()
+    var kind: ObstacleKind
+    var hitbox: RotatableRectangleHitbox
+    var velocity: CGPoint
+    var density: CGFloat {
+        switch kind {
+        case .wood: 1.0
+        case .stone: 5.0
+        case .metal: 10.0
+        case .magical: .infinity
+        }
+    }
+    var mass: CGFloat { density * hitbox.size.width*hitbox.size.height }
+}
