@@ -86,8 +86,10 @@ struct WallObstacle: PhysicsObject {
     var hitbox: RotatableRectangleHitbox
     var velocity: CGPoint
     var dragCoefficient: CGFloat { 5.0 }
+    var moveable: Bool = true
     var density: CGFloat {
-        switch kind {
+        if moveable { return 1_000_000 }
+        return switch kind {
         case .wood: 5.0
         case .stone: 25.0
         case .metal: 50.0
@@ -95,4 +97,65 @@ struct WallObstacle: PhysicsObject {
         }
     }
     var mass: CGFloat { density * hitbox.size.width*hitbox.size.height }
+}
+
+struct ProjectileFactory: PhysicsObject {
+    enum FactoryKind {
+        case slinger
+        case cannon
+        case dragon
+    }
+
+    var id: UUID = .init()
+    var kind: FactoryKind
+    var hitbox: RotatableRectangleHitbox
+    var velocity: CGPoint
+    var dragCoefficient: CGFloat { 5.0 }
+    var rotateToFaceEnemyKing: Bool = true
+    var density: CGFloat { 5.0 }
+    var mass: CGFloat { density * hitbox.size.width*hitbox.size.height }
+
+    func createProjectile() -> BallProjectile {
+        // calculate where to position yourself. The ball is created at 1x width, to the right of center, rotated accordingly.
+        let displacement = CGPoint(x: 1, y: 0).rotating(acw: hitbox.angle)
+        let newLocation = hitbox.center + hitbox.size.width * displacement
+        let newSpeed = switch kind {
+        case .slinger: 2.0
+        case .cannon: 5.0
+        case .dragon: 7.0
+        }
+        let newVelocity = newSpeed * displacement
+        let newKind = switch kind {
+        case .slinger: BallProjectile.ProjectileKind.rock
+        case .cannon: BallProjectile.ProjectileKind.cannonball
+        case .dragon: BallProjectile.ProjectileKind.fireball
+        }
+        let newRadius: CGFloat = switch kind {
+        case .slinger: 10.0
+        case .cannon: 15.0
+        case .dragon: 20.0
+        }
+
+        return .init(
+            kind: newKind,
+            hitbox: .init(radius: newRadius, center: newLocation),
+            velocity: newVelocity
+        )
+    }
+}
+
+struct King: PhysicsObject {
+    var id: UUID = .init()
+    var isPlayerKing: Bool
+    var hitbox: CircleHitbox
+    var velocity: CGPoint
+    var dragCoefficient: CGFloat { 5 }
+    var density: CGFloat { 10.0 }
+    var mass: CGFloat { density * .pi*hitbox.radius*hitbox.radius }
+
+    init(isPlayerKing: Bool, position: CGPoint, velocity: CGPoint) {
+        self.isPlayerKing = isPlayerKing
+        self.hitbox = .init(radius: 30, center: position)
+        self.velocity = velocity
+    }
 }
