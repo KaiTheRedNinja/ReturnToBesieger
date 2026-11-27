@@ -104,4 +104,8 @@ extension GameManager {
         // remove the object
         objects.removeAll(where: { $0.id == object.id })
     }
+
+    func objectDidDie(object: any KillableObject) {
+        print("OBJECT DIED: \(object)")
+    }
 }

@@ -114,20 +114,39 @@ class PhysicsManager {
             // copy them back
             var object1Copy = object1
             object1Copy.velocity = object1Final
-            newObjects[index1] = object1Copy
             var object2Copy = object2
             object2Copy.velocity = object2Final
+
+            // update their health
+            if var object1Killable = object1Copy as? any KillableObject {
+                let deltaV = (object1Final - object1.velocity).magnitude
+                object1Killable.currentHealth -= Int(deltaV)
+                object1Copy = object1Killable
+            }
+            if var object2Killable = object2Copy as? any KillableObject {
+                let deltaV = (object2Final - object2.velocity).magnitude
+                object2Killable.currentHealth -= Int(deltaV)
+                object2Copy = object2Killable
+            }
+
+            newObjects[index1] = object1Copy
             newObjects[index2] = object2Copy
         }
 
         self.objects = newObjects
 
-        // update the delegate
+        // inform the delegate of collisions
         for ids in collided {
             guard ids.count == 2 else { continue }
             let collidedObjects = ids.compactMap { id in objects.first(where: { $0.id == id }) }
             guard collidedObjects.count == 2 else { continue }
             delegate?.objectsDidCollide(object1: collidedObjects[0], object2: collidedObjects[1])
+        }
+
+        // inform the delegate of deaths
+        for object in objects {
+            guard let killable = object as? any KillableObject, killable.currentHealth <= 0 else { continue }
+            delegate?.objectDidDie(object: killable)
         }
 
         // inform object out of bounds. Note that we do not use a for loop here, as the delegate may
@@ -212,4 +231,5 @@ class PhysicsManager {
 protocol PhysicsManagerDelegate {
     func objectsDidCollide(object1: any PhysicsObject, object2: any PhysicsObject)
     func objectDidExitBounds(object: any PhysicsObject)
+    func objectDidDie(object: any KillableObject)
 }

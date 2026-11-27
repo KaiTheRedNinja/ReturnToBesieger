@@ -35,6 +35,11 @@ extension PhysicsObject {
     }
 }
 
+protocol KillableObject: PhysicsObject {
+    var totalHealth: Int { get }
+    var currentHealth: Int { get set }
+}
+
 struct Ball: PhysicsObject {
     var id: UUID = .init()
     var hitbox: CircleHitbox
@@ -66,8 +71,8 @@ struct BallProjectile: PhysicsObject {
     var density: CGFloat {
         switch kind {
         case .rock: 1.0
-        case .cannonball: 5.0
-        case .fireball: 10.0
+        case .cannonball: 3.0
+        case .fireball: 7.0
         }
     }
     var mass: CGFloat { density * .pi*hitbox.radius*hitbox.radius }
@@ -135,9 +140,9 @@ struct ProjectileFactory: PhysicsObject {
         let displacement = CGPoint(x: 1, y: 0).rotating(acw: hitbox.angle)
         let newLocation = hitbox.center + hitbox.size.width * displacement
         let newSpeed = switch kind {
-        case .slinger: 200.0
-        case .cannon: 500.0
-        case .dragon: 700.0
+        case .slinger: 400.0
+        case .cannon: 300.0
+        case .dragon: 600.0
         }
         let newVelocity = newSpeed * displacement
         let newKind = switch kind {
@@ -159,7 +164,7 @@ struct ProjectileFactory: PhysicsObject {
     }
 }
 
-struct King: PhysicsObject {
+struct King: PhysicsObject, KillableObject {
     var id: UUID = .init()
     var isPlayerKing: Bool
     var hitbox: CircleHitbox
@@ -167,6 +172,9 @@ struct King: PhysicsObject {
     var dragCoefficient: CGFloat { 5 }
     var density: CGFloat { 10.0 }
     var mass: CGFloat { density * .pi*hitbox.radius*hitbox.radius }
+
+    let totalHealth: Int = 300
+    var currentHealth: Int = 300
 
     init(isPlayerKing: Bool, position: CGPoint, velocity: CGPoint) {
         self.isPlayerKing = isPlayerKing

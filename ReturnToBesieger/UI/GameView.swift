@@ -190,6 +190,10 @@ struct GameView: View {
                     .fill(.purple)
             }
         }
+        .overlay {
+            Text("\(king.currentHealth)")
+                .foregroundStyle(.black)
+        }
         .frame(width: king.hitbox.radius*2, height: king.hitbox.radius*2)
     }
 
