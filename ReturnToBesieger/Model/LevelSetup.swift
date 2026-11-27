@@ -21,7 +21,9 @@ struct LevelSetup {
     var enemyStructure: [any PhysicsObject]
 }
 
-struct BudgetItem {
+struct BudgetItem: Identifiable {
     var object: any PhysicsObject
     var count: Int
+
+    var id: UUID { object.id }
 }

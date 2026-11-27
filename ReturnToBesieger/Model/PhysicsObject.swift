@@ -11,7 +11,7 @@ protocol PhysicsObject: Identifiable {
     associatedtype HB: HitBox
 
     /// The ID
-    var id: UUID { get }
+    var id: UUID { get set }
     /// The hitbox of the object
     var hitbox: HB { get set }
     /// The mass of the object. A mass of `.infinity` implies an immovable object.
@@ -93,11 +93,11 @@ struct WallObstacle: PhysicsObject {
     var dragCoefficient: CGFloat { 5.0 }
     var moveable: Bool = true
     var density: CGFloat {
-        if moveable { return 1_000_000 }
+        if !moveable { return 1_000_000 }
         return switch kind {
-        case .wood: 5.0
-        case .stone: 25.0
-        case .metal: 50.0
+        case .wood: 0.4
+        case .stone: 1.2
+        case .metal: 5.0
         case .magical: 1_000_000
         }
     }
@@ -173,8 +173,8 @@ struct King: PhysicsObject, KillableObject {
     var density: CGFloat { 10.0 }
     var mass: CGFloat { density * .pi*hitbox.radius*hitbox.radius }
 
-    let totalHealth: Int = 300
-    var currentHealth: Int = 300
+    let totalHealth: Int = 200
+    var currentHealth: Int = 200
 
     init(isPlayerKing: Bool, position: CGPoint, velocity: CGPoint) {
         self.isPlayerKing = isPlayerKing

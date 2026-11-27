@@ -19,7 +19,7 @@ class PhysicsManager {
     /// NOTE: this physics manager is a top-down view, gravity is only used for friction purposes
     var gravity: CGFloat = 100
     /// The bounds of the simulation. When an object completely exits the bounds, the delegate is informed.
-    var bounds: CGRect = .init(center: .zero, size: screenSize)
+    var bounds: CGRect = .init(center: .zero, size: simulationSize)
     /// The delegate, which is informed of collisions.
     var delegate: (any PhysicsManagerDelegate)?
 

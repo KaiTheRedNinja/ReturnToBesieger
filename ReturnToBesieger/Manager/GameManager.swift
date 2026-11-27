@@ -108,4 +108,13 @@ extension GameManager {
     func objectDidDie(object: any KillableObject) {
         print("OBJECT DIED: \(object)")
     }
+
+    /// Adds an instance of the object
+    func addInstance(budgetIndex: Int) {
+        guard !physicsEnabled, let level, level.budget[budgetIndex].count > 0 else { return }
+        var newObject = level.budget[budgetIndex].object
+        newObject.id = UUID()
+        objects.append(newObject)
+        self.level?.budget[budgetIndex].count -= 1
+    }
 }
