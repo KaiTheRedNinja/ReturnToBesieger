@@ -9,41 +9,8 @@ import SwiftUI
 import Combine
 
 struct GameView: View {
-    @State var physics: PhysicsManager = .init(
-        objects: [
-//            Ball(
-//                hitbox: .init(radius: 20, center: .init(x: 0, y: 0)),
-//                velocity: .init(x: 1, y: 0)
-//            ),
-//            Ball(
-//                hitbox: .init(radius: 20, center: .init(x: 100, y: 0)),
-//                velocity: .init(x: 0, y: 0)
-//            ),
-//            Ball(
-//                hitbox: .init(radius: 20, center: .init(x: 140, y: 0)),
-//                velocity: .init(x: 0, y: 0)
-//            ),
-//            Ball(
-//                hitbox: .init(radius: 20, center: .init(x: 180, y: 0)),
-//                velocity: .init(x: 0, y: 0)
-//            ),
-//            Ball(
-//                hitbox: .init(radius: 20, center: .init(x: 220, y: 0)),
-//                velocity: .init(x: 0, y: 0)
-//            ),
-//            Wall(
-//                hitbox: .init(size: .init(width: 100, height: 200), center: .init(x: 300, y: 0), angle: .degrees(0)),
-//                velocity: .zero
-//            )
-            BallProjectile(kind: .rock, hitbox: .init(radius: 20, center: .init(x: -200, y: 100)), velocity: .zero),
-            BallProjectile(kind: .cannonball, hitbox: .init(radius: 20, center: .init(x: -200, y: 0)), velocity: .zero),
-            BallProjectile(kind: .fireball, hitbox: .init(radius: 20, center: .init(x: -200, y: -100)), velocity: .zero),
-
-            WallObstacle(kind: .wood, hitbox: .init(size: .init(width: 100, height: 100), center: .init(x: 0, y: 200), angle: .degrees(0)), velocity: .init(x: 0, y: 0)),
-            WallObstacle(kind: .stone, hitbox: .init(size: .init(width: 100, height: 100), center: .init(x: 0, y: 75), angle: .degrees(0)), velocity: .init(x: 0, y: 0)),
-            WallObstacle(kind: .metal, hitbox: .init(size: .init(width: 100, height: 100), center: .init(x: 0, y: -75), angle: .degrees(0)), velocity: .init(x: 0, y: 0)),
-            WallObstacle(kind: .magical, hitbox: .init(size: .init(width: 100, height: 100), center: .init(x: 0, y: -200), angle: .degrees(0)), velocity: .init(x: 0, y: 0))
-        ]
+    @State var physics: GameManager = .init(
+        objects: []
     )
 
     @State var gameClock = Timer.publish(every: 1/60, on: .main, in: .common).autoconnect()
@@ -58,6 +25,42 @@ struct GameView: View {
             physics.update(dt: 1/60)
         }
         .coordinateSpace(.named("game"))
+        .onAppear {
+            physics.load(
+                level: .init(
+                    name: "Testing",
+                    myKing: .init(isPlayerKing: true, position: .init(x: 300, y: 0), velocity: .zero),
+                    budget: [],
+                    enemyKing: .init(isPlayerKing: false, position: .init(x: -300, y: 0), velocity: .zero),
+                    enemyStructure: [
+                        ProjectileFactory(kind: .slinger, position: .init(x: -300, y: 200), velocity: .zero),
+                        ProjectileFactory(kind: .cannon, position: .init(x: -300, y: 400), velocity: .zero),
+                        ProjectileFactory(kind: .dragon, position: .init(x: -300, y: -200), velocity: .zero)
+                    ]
+                )
+            )
+        }
+        .toolbar {
+            if physics.physicsEnabled {
+                Button {
+                    physics.endSimulation()
+                } label: {
+                    Image(systemName: "pause")
+                }
+            } else {
+                Button {
+                    physics.startSimulation()
+                } label: {
+                    Image(systemName: "play")
+                }
+            }
+
+            Button {
+                physics.resetToBackup()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+        }
     }
 
     func viewFor(object: any PhysicsObject) -> some View {
@@ -70,6 +73,10 @@ struct GameView: View {
                 viewFor(ballProjectile: ballProjectile)
             } else if let wallObstacle = object as? WallObstacle {
                 viewFor(wallObstacle: wallObstacle)
+            } else if let king = object as? King {
+                viewFor(king: king)
+            } else if let factory = object as? ProjectileFactory {
+                viewFor(factory: factory)
             }
         }
         .offset(x: object.hitbox.center.x, y: -object.hitbox.center.y)
@@ -171,5 +178,39 @@ struct GameView: View {
         }
         .frame(width: wallObstacle.hitbox.size.width, height: wallObstacle.hitbox.size.height)
         .rotationEffect(wallObstacle.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
+    }
+
+    func viewFor(king: King) -> some View {
+        Group {
+            if king.isPlayerKing {
+                Circle()
+                    .fill(.yellow)
+            } else {
+                Circle()
+                    .fill(.purple)
+            }
+        }
+        .frame(width: king.hitbox.radius*2, height: king.hitbox.radius*2)
+    }
+
+    func viewFor(factory: ProjectileFactory) -> some View {
+        Group {
+            switch factory.kind {
+            case .slinger:
+                Rectangle()
+                    .fill(Color.brown)
+                    .stroke(Color.black, lineWidth: 2)
+            case .cannon:
+                Rectangle()
+                    .fill(Color(white: 0.4))
+                    .stroke(Color.black, lineWidth: 2)
+            case .dragon:
+                Rectangle()
+                    .fill(Color.red)
+                    .stroke(Color.black, lineWidth: 2)
+            }
+        }
+        .frame(width: factory.hitbox.size.width, height: factory.hitbox.size.height)
+        .rotationEffect(factory.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
     }
 }

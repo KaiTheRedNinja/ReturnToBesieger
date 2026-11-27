@@ -10,6 +10,7 @@ import SwiftUI
 struct PhysicsManualMoveTarget<Content: View>: View {
     var object: any PhysicsObject
     var manager: PhysicsManager
+    var enabled: Bool
     var content: Content
 
     @State private var preservedPosition: CGPoint?
@@ -18,13 +19,24 @@ struct PhysicsManualMoveTarget<Content: View>: View {
     @State private var lastDragTime: Date?
     @State private var throwVelocity: CGPoint?
 
-    init(object: any PhysicsObject, manager: PhysicsManager, @ViewBuilder content: () -> Content) {
+    init(object: any PhysicsObject, manager: PhysicsManager, enabled: Bool = true, @ViewBuilder content: () -> Content) {
         self.object = object
         self.manager = manager
+        self.enabled = enabled
         self.content = content()
     }
 
     var body: some View {
+        if enabled {
+            gestureOn
+        } else {
+            ZStack {
+                content
+            }
+        }
+    }
+
+    var gestureOn: some View {
         ZStack {
             content
         }

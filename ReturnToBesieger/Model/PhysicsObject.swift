@@ -112,17 +112,32 @@ struct ProjectileFactory: PhysicsObject {
     var velocity: CGPoint
     var dragCoefficient: CGFloat { 5.0 }
     var rotateToFaceEnemyKing: Bool = true
+    var fireInterval: TimeInterval
+    var lastFire: Date = .distantPast
     var density: CGFloat { 5.0 }
     var mass: CGFloat { density * hitbox.size.width*hitbox.size.height }
+
+    init(kind: FactoryKind, position: CGPoint, fixedAngle: Angle? = nil, velocity: CGPoint) {
+        self.kind = kind
+        self.hitbox = .init(size: .init(width: 100, height: 70), center: position, angle: fixedAngle ?? .zero)
+        self.velocity = velocity
+        self.rotateToFaceEnemyKing = fixedAngle != nil
+        self.fireInterval = switch kind {
+        case .slinger: 3.0
+        case .cannon: 5.0
+        case .dragon: 8.0
+        }
+        self.lastFire = .distantPast
+    }
 
     func createProjectile() -> BallProjectile {
         // calculate where to position yourself. The ball is created at 1x width, to the right of center, rotated accordingly.
         let displacement = CGPoint(x: 1, y: 0).rotating(acw: hitbox.angle)
         let newLocation = hitbox.center + hitbox.size.width * displacement
         let newSpeed = switch kind {
-        case .slinger: 2.0
-        case .cannon: 5.0
-        case .dragon: 7.0
+        case .slinger: 200.0
+        case .cannon: 500.0
+        case .dragon: 700.0
         }
         let newVelocity = newSpeed * displacement
         let newKind = switch kind {

@@ -129,9 +129,12 @@ class PhysicsManager {
             guard collidedObjects.count == 2 else { continue }
             delegate?.objectsDidCollide(object1: collidedObjects[0], object2: collidedObjects[1])
         }
-        for object in objects where !bounds.contains(object.hitbox.frame) {
-            delegate?.objectDidExitBounds(object: object)
-        }
+
+        // inform object out of bounds. Note that we do not use a for loop here, as the delegate may
+        // delete objects and we don't want to cause looping problems.
+        objects
+            .filter { !bounds.contains($0.hitbox.frame) }
+            .forEach { delegate?.objectDidExitBounds(object: $0) }
     }
 
     /// Returns the normal vector of a collision, or `nil` if the objects do not collide.
