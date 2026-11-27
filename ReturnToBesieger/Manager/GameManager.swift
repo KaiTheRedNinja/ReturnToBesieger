@@ -30,9 +30,9 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
                   now.timeIntervalSince(factory.lastFire) > factory.fireInterval
             else { continue }
             // face to king
-            if let king {
+            if let king, factory.rotateToFaceEnemyKing {
                 let factoryToKing = king.hitbox.center - factory.hitbox.center
-                factory.updateAngle(to: -factoryToKing.angle)
+                factory.updateAngle(to: -factoryToKing.angle + Angle.degrees(.random(in: -3..<3)))
             }
             // create a new object
             let newProjectile = factory.createProjectile()
@@ -72,6 +72,17 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
             level.myKing,
             level.enemyKing
         ]
+
+        // update any projectile factories
+        for (index, object) in objects.enumerated() {
+            guard var factory = object as? ProjectileFactory,
+                  factory.rotateToFaceEnemyKing
+            else { continue }
+            // face to king
+            let factoryToKing = level.myKing.hitbox.center - factory.hitbox.center
+            factory.updateAngle(to: -factoryToKing.angle)
+            objects[index] = factory
+        }
     }
 }
 

@@ -121,7 +121,7 @@ struct ProjectileFactory: PhysicsObject {
         self.kind = kind
         self.hitbox = .init(size: .init(width: 100, height: 70), center: position, angle: fixedAngle ?? .zero)
         self.velocity = velocity
-        self.rotateToFaceEnemyKing = fixedAngle != nil
+        self.rotateToFaceEnemyKing = fixedAngle == nil
         self.fireInterval = switch kind {
         case .slinger: 3.0
         case .cannon: 5.0
