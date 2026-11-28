@@ -32,7 +32,7 @@ Game:
   - [x] Budget system
   - [x] Drag out of toolbar to place
   - [x] Drag into toolbar to remove
-- [ ] Fast forward
+- [x] Fast forward
 - [ ] Gameplay
   - [ ] Instruction screen
   - [ ] Win/lose screen

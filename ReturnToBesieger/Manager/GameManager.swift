@@ -11,6 +11,8 @@ import SwiftUI
 class GameManager: PhysicsManager, PhysicsManagerDelegate {
     /// Whether physics are active or not
     var physicsEnabled: Bool = false
+    /// The rate at which physics runs, i.e. the number of simulation seconds per real world second
+    var timeRate: CGFloat = 1
     /// A backup of the objects, used to restore the positions of everything upon reset
     @ObservationIgnored var objectsBackup: [any PhysicsObject] = []
     /// The current level setup, if any
@@ -42,7 +44,7 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
         }
         objects += newObjects
 
-        super.update(dt: dt)
+        super.update(dt: dt * timeRate)
     }
 
     func startSimulation() {
