@@ -178,6 +178,19 @@ struct ProjectileFactoryView: View {
             }
         }
         .frame(width: factory.hitbox.size.width, height: factory.hitbox.size.height)
+        .overlay {
+            let healthPercent = max(0, CGFloat(factory.currentHealth) / CGFloat(factory.totalHealth))
+            let healthPercentLost = min(1, 1 - healthPercent)
+
+            Cracks(crackWavelength: 30, crackAmplitude: 15, crackSpacing: 15)
+                .stroke(.black, lineWidth: 15 / 3 * healthPercentLost) // 15/2 would fill up the whole space
+                .reverseMask {
+                    Rectangle()
+                        .frame(width: factory.hitbox.size.width * healthPercent, height: factory.hitbox.size.height * healthPercent)
+                        .blur(radius: 10)
+                }
+                .opacity(0.5)
+        }
         .rotationEffect(factory.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
     }
 }

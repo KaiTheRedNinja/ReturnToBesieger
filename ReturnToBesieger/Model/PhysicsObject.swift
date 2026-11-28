@@ -154,7 +154,7 @@ struct WallObstacle: PhysicsObject, KillableObject {
     }
 }
 
-struct ProjectileFactory: PhysicsObject {
+struct ProjectileFactory: PhysicsObject, KillableObject {
     enum FactoryKind {
         case slinger
         case cannon
@@ -169,8 +169,17 @@ struct ProjectileFactory: PhysicsObject {
     var rotateToFaceEnemyKing: Bool = true
     var fireInterval: TimeInterval
     var lastFire: Date = .distantPast
-    var density: CGFloat { 5.0 }
+    var density: CGFloat {
+        return switch kind {
+        case .slinger: 0.8
+        case .cannon: 1.2
+        case .dragon: 5.0
+        }
+    }
     var mass: CGFloat { density * hitbox.size.width*hitbox.size.height }
+
+    let totalHealth: Int = 500
+    var currentHealth: Int = 500
 
     init(kind: FactoryKind, position: CGPoint, fixedAngle: Angle? = nil, velocity: CGPoint) {
         self.kind = kind
