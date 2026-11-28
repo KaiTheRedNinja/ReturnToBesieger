@@ -100,9 +100,9 @@ struct GameView: View {
                     ],
                     enemyKing: .init(isPlayerKing: false, position: .init(x: -300, y: 0), velocity: .zero),
                     enemyStructure: [
-//                        ProjectileFactory(kind: .slinger, position: .init(x: -300, y: 200), velocity: .zero),
-//                        ProjectileFactory(kind: .cannon, position: .init(x: -300, y: 400), velocity: .zero),
-                        ProjectileFactory(kind: .dragon, position: .init(x: -300, y: -200), velocity: .zero)
+                        ProjectileFactory(kind: .slinger, position: .init(x: -300, y: 200), fixedAngle: .zero, velocity: .zero),
+                        ProjectileFactory(kind: .cannon, position: .init(x: -300, y: 400), fixedAngle: .zero, velocity: .zero),
+                        ProjectileFactory(kind: .dragon, position: .init(x: -300, y: -200), fixedAngle: .zero, velocity: .zero)
                     ]
                 )
             )

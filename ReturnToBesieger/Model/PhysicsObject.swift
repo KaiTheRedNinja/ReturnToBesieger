@@ -98,7 +98,7 @@ struct WallObstacle: PhysicsObject {
     var density: CGFloat {
         if !moveable { return 1_000_000 }
         return switch kind {
-        case .wood: 0.4
+        case .wood: 0.8
         case .stone: 1.2
         case .metal: 5.0
         case .magical: 1_000_000
