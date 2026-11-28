@@ -32,7 +32,7 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
             // face to king
             if let king, factory.rotateToFaceEnemyKing {
                 let factoryToKing = king.hitbox.center - factory.hitbox.center
-                factory.updateAngle(to: -factoryToKing.angle + Angle.degrees(.random(in: -3..<3)))
+                factory.updateAngle(to: -factoryToKing.angle + Angle.degrees(.random(in: -1..<1)))
             }
             // create a new object
             let newProjectile = factory.createProjectile()
@@ -87,6 +87,22 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
 }
 
 extension GameManager {
+    func objectsShoudlCollide(object1: any PhysicsObject, object2: any PhysicsObject) -> Bool {
+        guard let (wall, ball) = (object1, object2) as? (WallObstacle, BallProjectile)
+                              ?? (object2, object1) as? (WallObstacle, BallProjectile),
+              wall.oneWay
+        else {
+            return true
+        }
+
+        // determine the direction vector of the right of the wall, accounting for rotation
+        let permitDirection = CGPoint(x: 1, y: 0).rotating(acw: wall.hitbox.angle)
+        let ballInPermitDirection = ball.velocity.dot(permitDirection) > 0
+
+        // if ball is in permit direction, do not collide as we allow in that direction.
+        return !ballInPermitDirection
+    }
+
     func objectsDidCollide(object1: any PhysicsObject, object2: any PhysicsObject) {
         guard let level else { return }
         if object1.id == level.myKing.id || object2.id == level.myKing.id {
@@ -107,6 +123,9 @@ extension GameManager {
 
     func objectDidDie(object: any KillableObject) {
         print("OBJECT DIED: \(object)")
+        if object is King {
+            endSimulation()
+        }
     }
 
     /// Adds an instance of the object

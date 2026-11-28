@@ -86,12 +86,22 @@ struct GameView: View {
                                 moveable: true
                             ),
                             count: 1
-                        )
+                        ),
+                        .init(
+                            object: WallObstacle(
+                                kind: .stone,
+                                hitbox: .init(size: .init(width: 80, height: 100), center: .zero, angle: .zero),
+                                velocity: .zero,
+                                moveable: true,
+                                oneWay: true
+                            ),
+                            count: 1
+                        ),
                     ],
                     enemyKing: .init(isPlayerKing: false, position: .init(x: -300, y: 0), velocity: .zero),
                     enemyStructure: [
-                        ProjectileFactory(kind: .slinger, position: .init(x: -300, y: 200), velocity: .zero),
-                        ProjectileFactory(kind: .cannon, position: .init(x: -300, y: 400), velocity: .zero),
+//                        ProjectileFactory(kind: .slinger, position: .init(x: -300, y: 200), velocity: .zero),
+//                        ProjectileFactory(kind: .cannon, position: .init(x: -300, y: 400), velocity: .zero),
                         ProjectileFactory(kind: .dragon, position: .init(x: -300, y: -200), velocity: .zero)
                     ]
                 )
@@ -212,7 +222,7 @@ struct GameView: View {
 
     func viewFor(wallObstacle: WallObstacle) -> some View {
         PhysicsManualMoveTarget(object: wallObstacle, manager: physics) {
-            switch wallObstacle.kind {
+            Group { switch wallObstacle.kind {
             case .wood:
                 Rectangle()
                     .fill(Color.brown)
@@ -247,6 +257,15 @@ struct GameView: View {
                             endPoint: .bottomLeading
                         )
                     )
+            }}
+            .overlay {
+                if wallObstacle.oneWay {
+                    Image(systemName: "arrow.right")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundStyle(.white)
+                        .padding()
+                }
             }
         }
         .frame(width: wallObstacle.hitbox.size.width, height: wallObstacle.hitbox.size.height)

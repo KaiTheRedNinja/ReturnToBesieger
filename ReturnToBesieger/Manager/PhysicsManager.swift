@@ -72,14 +72,19 @@ class PhysicsManager {
         for (index1, object1) in newObjects.enumerated() {
             var normal: CGPoint = .zero
             var otherObject: (Int, any PhysicsObject)?
-            for (index2, object2) in newObjects.enumerated().dropFirst(index1+1) { // we can skip everything before the current object because its redundant
-                // make sure the objects are not the same object, or have collided before
-                guard !collided.contains([object1.id, object2.id]), object2.id != object1.id else { continue }
-                // check for a collision. The collision uses a cheap ABBA (? is that its name) frame detection first, so failure is
-                // pretty cheap
-                guard let normalCandidate = normalOfCollision(hitBox1: object1.hitbox, hitBox2: object2.hitbox) else { continue }
-                // the normal must be in the opposite direction of the net velocity (object1's velocity adjusting for object 2 as stationary)
-                guard normalCandidate.dot(object1.velocity - object2.velocity) < 0 else { continue }
+            // we can skip everything before the current object because its redundant
+            for (index2, object2) in newObjects.enumerated().dropFirst(index1+1) {
+
+                guard // make sure the objects are not the same object, or have collided before
+                      !collided.contains([object1.id, object2.id]), object2.id != object1.id,
+                      // check for a collision. The collision uses a cheap ABBA (? is that its name) frame detection first,
+                      // so failure is pretty cheap
+                      let normalCandidate = normalOfCollision(hitBox1: object1.hitbox, hitBox2: object2.hitbox),
+                      // the normal must be in the opposite direction of the net velocity (object1's velocity adjusting for object 2 as stationary)
+                      normalCandidate.dot(object1.velocity - object2.velocity) < 0,
+                      // ask the delegate if we should allow the two objects to collide
+                      delegate?.objectsShoudlCollide(object1: object1, object2: object2) ?? true
+                else { continue }
                 normal = normalCandidate
                 otherObject = (index2, object2)
                 break
@@ -161,7 +166,34 @@ class PhysicsManager {
         // do a trivial frame check first
         guard hitBox1.frame.intersects(hitBox2.frame) else { return nil }
 
-        // if object1 is a compound hitbox, break it up and check each individual segment
+        // time to compare with our hit interactions
+        for hitInteraction in hitInteractions {
+            do {
+                let intersects = try hitInteraction.intersects(hitBox1: hitBox1, hitBox2: hitBox2)
+                // if it succeeded but returned false, they do not intersect, we return nil
+                guard intersects else { return nil }
+                // return the normal
+                return try hitInteraction.normalUnitVector(to: hitBox1, from: hitBox2)
+            } catch {
+                // did not succeed, try the next one
+                continue
+            }
+        }
+        // we try the exact same thing but swapping orders reverse
+        for hitInteraction in hitInteractions {
+            do {
+                let intersects = try hitInteraction.intersects(hitBox1: hitBox2, hitBox2: hitBox1)
+                // if it succeeded but returned false, they do not intersect, we return nil
+                guard intersects else { return nil }
+                // return the normal (but invert it to account for the flipped order)
+                return try -hitInteraction.normalUnitVector(to: hitBox2, from: hitBox1)
+            } catch {
+                // did not succeed, try the next one
+                continue
+            }
+        }
+
+        // no hit interaction for the hitbox type is given. We split them up if they're compound, then try again.
         if let compound1 = hitBox1 as? CompoundHitbox {
             let normal = compound1.lines.reduce(CGPoint.zero) { partialResult, segment in
                 partialResult + (normalOfCollision(
@@ -194,34 +226,6 @@ class PhysicsManager {
             return normal
         }
 
-        // we should have a single hitbox comparing to another single hitbox
-        // time to compare with our hit interactions
-        for hitInteraction in hitInteractions {
-            do {
-                let intersects = try hitInteraction.intersects(hitBox1: hitBox1, hitBox2: hitBox2)
-                // if it succeeded but returned false, they do not intersect, we return nil
-                guard intersects else { return nil }
-                // return the normal
-                return try hitInteraction.normalUnitVector(to: hitBox1, from: hitBox2)
-            } catch {
-                // did not succeed, try the next one
-                continue
-            }
-        }
-        // we try the exact same thing but swapping orders reverse
-        for hitInteraction in hitInteractions {
-            do {
-                let intersects = try hitInteraction.intersects(hitBox1: hitBox2, hitBox2: hitBox1)
-                // if it succeeded but returned false, they do not intersect, we return nil
-                guard intersects else { return nil }
-                // return the normal (but invert it to account for the flipped order)
-                return try -hitInteraction.normalUnitVector(to: hitBox2, from: hitBox1)
-            } catch {
-                // did not succeed, try the next one
-                continue
-            }
-        }
-
         // not handled yet
         print("Interactions between \(hitBox1) and \(hitBox2) are not supported yet")
         return nil
@@ -229,7 +233,13 @@ class PhysicsManager {
 }
 
 protocol PhysicsManagerDelegate {
+    /// Asks the delegate whether or not two objects should collide with each other. Returns `true` if the objects
+    /// should collide, or `false` if they should phase through each other.
+    func objectsShoudlCollide(object1: any PhysicsObject, object2: any PhysicsObject) -> Bool
+    /// Informs the delegate that two objects have collided
     func objectsDidCollide(object1: any PhysicsObject, object2: any PhysicsObject)
+    /// Informs the delegate that an object has exited the bounds of the field
     func objectDidExitBounds(object: any PhysicsObject)
+    /// Informs the delegate that a killable object has fallen to or below 0 health
     func objectDidDie(object: any KillableObject)
 }

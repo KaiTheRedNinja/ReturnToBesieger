@@ -70,9 +70,9 @@ struct BallProjectile: PhysicsObject {
     var dragCoefficient: CGFloat { 0 }
     var density: CGFloat {
         switch kind {
-        case .rock: 1.0
-        case .cannonball: 3.0
-        case .fireball: 7.0
+        case .rock: 4.0
+        case .cannonball: 6.0
+        case .fireball: 8.0
         }
     }
     var mass: CGFloat { density * .pi*hitbox.radius*hitbox.radius }
@@ -91,7 +91,10 @@ struct WallObstacle: PhysicsObject {
     var hitbox: RotatableRectangleHitbox
     var velocity: CGPoint
     var dragCoefficient: CGFloat { 5.0 }
+    /// Whether or not the obstacle is moveable by the user
     var moveable: Bool = true
+    /// A one way wall obstacle blocks items coming in from the right, while allowing items through from the left
+    var oneWay: Bool = false
     var density: CGFloat {
         if !moveable { return 1_000_000 }
         return switch kind {
@@ -142,7 +145,7 @@ struct ProjectileFactory: PhysicsObject {
         let newSpeed = switch kind {
         case .slinger: 400.0
         case .cannon: 300.0
-        case .dragon: 600.0
+        case .dragon: 500.0
         }
         let newVelocity = newSpeed * displacement
         let newKind = switch kind {
