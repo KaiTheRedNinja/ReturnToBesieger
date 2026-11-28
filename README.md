@@ -18,11 +18,26 @@ Physics sim:
   - [x] Ball-rectangle collision detection
   - [x] Ball-ball collision detection
   - [x] Rectangle-rectangle collision detection
-  - [ ] Normal vector
+  - [x] Normal vector
   - [ ] Point of collision
   - [x] Perfectly elastic collisions
   - [ ] Collisions with rotation
-- [ ] Friction (with the floor)
+- [x] Friction (with the floor)
 
 Game:
-- [ ] Render screen
+- [x] Render screen
+- [x] User drag and rotate
+  - [x] Bound only to placeable areas
+- [x] Toolbar
+  - [x] Budget system
+  - [x] Drag out of toolbar to place
+  - [x] Drag into toolbar to remove
+- [ ] Fast forward
+- [ ] Gameplay
+  - [ ] Instruction screen
+  - [ ] Win/lose screen
+  - [ ] In-UI play button
+- [ ] Levels
+  - [ ] Teach about bouncing, maybe just one slinger, one king on each side, and one piece of wood
+  - [ ] Teach about minimising damage
+  - [ ] Prioritise large targets like the dragons
