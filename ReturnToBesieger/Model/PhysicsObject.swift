@@ -128,8 +128,8 @@ struct WallObstacle: PhysicsObject, KillableObject {
     var totalHealth: Int {
         switch kind {
         case .wood: 1_000
-        case .stone: 3_000
-        case .metal: 8_000
+        case .stone: 1_000
+        case .metal: 1_000
         case .magical: 1_000_000
         }
     }

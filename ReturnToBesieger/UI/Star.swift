@@ -80,3 +80,48 @@ struct Star: Shape {
         return path.applying(transform)
     }
 }
+
+/// A zigzag pattern across the shape
+struct Cracks: Shape {
+    /// The distance between peaks of the same crack
+    var crackWavelength: CGFloat
+    /// The distance between a peak and the midline of a crack
+    var crackAmplitude: CGFloat
+    /// The distance between the midlines of two adjacent cracks
+    var crackSpacing: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+
+        let crackCount = Int((rect.height + 2 * crackAmplitude + crackSpacing) / crackSpacing)
+        let waveCount = Int(rect.width / crackWavelength) + 1
+        for crackIndex in 0..<crackCount {
+            let midline = crackSpacing * CGFloat(crackIndex) - crackAmplitude
+            path.move(to: .init(x: 0, y: midline))
+            for waveIndex in 0..<waveCount {
+                let offset = crackWavelength * CGFloat(waveIndex)
+                path.addLine(to: .init(x: offset + crackWavelength * 1 / 4, y: midline + crackAmplitude))
+                path.addLine(to: .init(x: offset + crackWavelength * 3 / 4, y: midline - crackAmplitude))
+                path.addLine(to: .init(x: offset + crackWavelength,         y: midline))
+            }
+        }
+
+        return path
+    }
+}
+
+extension View {
+    @inlinable
+    public func reverseMask<Mask: View>(
+        alignment: Alignment = .center,
+        @ViewBuilder _ mask: () -> Mask
+    ) -> some View {
+        self.mask {
+            Rectangle()
+                .overlay(alignment: alignment) {
+                    mask()
+                        .blendMode(.destinationOut)
+                }
+        }
+    }
+}

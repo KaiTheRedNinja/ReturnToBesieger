@@ -152,6 +152,9 @@ extension GameManager {
         print("OBJECT DIED: \(object)")
         if object is King {
             endSimulation()
+        } else {
+            // remove the object
+            objects.removeAll(where: { $0.id == object.id })
         }
     }
 

@@ -110,6 +110,19 @@ struct WallObstacleView: View {
         }
         .border(.red, width: wallObstacle.moveable ? 0 : 5)
         .frame(width: wallObstacle.hitbox.size.width, height: wallObstacle.hitbox.size.height)
+        .overlay {
+            let healthPercent = max(0, CGFloat(wallObstacle.currentHealth) / CGFloat(wallObstacle.totalHealth))
+            let healthPercentLost = min(1, 1 - healthPercent)
+
+            Cracks(crackWavelength: 30, crackAmplitude: 15, crackSpacing: 15)
+                .stroke(.black, lineWidth: 15 / 3 * healthPercentLost) // 15/2 would fill up the whole space
+                .reverseMask {
+                    Rectangle()
+                        .frame(width: wallObstacle.hitbox.size.width * healthPercent, height: wallObstacle.hitbox.size.height * healthPercent)
+                        .blur(radius: 10)
+                }
+                .opacity(0.5)
+        }
         .rotationEffect(wallObstacle.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
         .overlay {
             // if its outside bounds during placing time, it will be marked as to be deleted
@@ -119,9 +132,6 @@ struct WallObstacleView: View {
                     .scaledToFit()
                     .foregroundStyle(.red)
             }
-
-            // its health
-            Text("\(wallObstacle.currentHealth)")
         }
     }
 }
