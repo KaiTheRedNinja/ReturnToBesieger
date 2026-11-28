@@ -186,7 +186,7 @@ struct GameView: View {
     }
 
     func viewFor(ballProjectile: BallProjectile) -> some View {
-        PhysicsManualMoveTarget(object: ballProjectile, manager: physics) {
+        PhysicsManualMoveTarget(object: ballProjectile, manager: physics, enabled: !physics.physicsEnabled) {
             switch ballProjectile.kind {
             case .rock:
                 Circle()
@@ -221,7 +221,7 @@ struct GameView: View {
     }
 
     func viewFor(wallObstacle: WallObstacle) -> some View {
-        PhysicsManualMoveTarget(object: wallObstacle, manager: physics) {
+        PhysicsManualMoveTarget(object: wallObstacle, manager: physics, enabled: wallObstacle.moveable && !physics.physicsEnabled) {
             Group { switch wallObstacle.kind {
             case .wood:
                 Rectangle()
