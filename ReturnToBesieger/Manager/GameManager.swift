@@ -51,8 +51,10 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
 
     func startSimulation(timeRate: CGFloat = 1) {
         physicsEnabled = true
+        if levelPhase == .placeWalls {
+            objectsBackup = objects
+        }
         levelPhase = .playing
-        objectsBackup = objects
         self.timeRate = timeRate
     }
 
@@ -154,10 +156,11 @@ extension GameManager {
     }
 
     /// Adds an instance of the object
-    func addInstance(budgetIndex: Int) {
+    func addInstance(budgetIndex: Int, location: CGPoint = .zero) {
         guard !physicsEnabled, let level, level.budget[budgetIndex].count > 0 else { return }
         var newObject = level.budget[budgetIndex].object
         newObject.id = UUID()
+        newObject.updateCenter(to: location)
         objects.append(newObject)
         self.level?.budget[budgetIndex].count -= 1
     }

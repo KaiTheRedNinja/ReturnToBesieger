@@ -119,6 +119,19 @@ struct GameView: View {
             physics.update(dt: 1/60)
         }
         .coordinateSpace(.named("game"))
+        .dropDestination(for: String.self) { items, session in
+            guard let level = physics.level else { return }
+            for item in items {
+                guard let index = Int(item),
+                      index >= 0,
+                      index < level.budget.count else { continue }
+
+                physics.addInstance(
+                    budgetIndex: index,
+                    location: (session.location - .init(x: simulationSize.width/2, y: simulationSize.height/2)).vflip()
+                )
+            }
+        }
     }
 
     var inventoryView: some View {
@@ -146,8 +159,6 @@ struct BudgetItemView: View {
     var index: Int
     var manager: GameManager
 
-    @State private var placeholderInstance: (any PhysicsObject)?
-
     var body: some View {
         Group {
             PhysicsObjectView(object: budgetItem.object, manager: manager)
@@ -159,6 +170,9 @@ struct BudgetItemView: View {
                 .background {
                     Circle().fill(.white)
                 }
+        }
+        .draggable("\(index)") {
+            PhysicsObjectView(object: budgetItem.object, manager: manager)
         }
         .onTapGesture {
             manager.addInstance(budgetIndex: index)
