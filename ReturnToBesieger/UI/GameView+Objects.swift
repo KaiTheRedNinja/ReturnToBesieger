@@ -119,6 +119,9 @@ struct WallObstacleView: View {
                     .scaledToFit()
                     .foregroundStyle(.red)
             }
+
+            // its health
+            Text("\(wallObstacle.currentHealth)")
         }
     }
 }

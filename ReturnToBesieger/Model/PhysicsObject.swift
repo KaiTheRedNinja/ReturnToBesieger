@@ -97,7 +97,7 @@ struct BallProjectile: PhysicsObject {
     }
 }
 
-struct WallObstacle: PhysicsObject {
+struct WallObstacle: PhysicsObject, KillableObject {
     enum ObstacleKind {
         case wood
         case stone
@@ -124,6 +124,27 @@ struct WallObstacle: PhysicsObject {
         }
     }
     var mass: CGFloat { density * hitbox.size.width*hitbox.size.height }
+
+    var totalHealth: Int {
+        switch kind {
+        case .wood: 1_000
+        case .stone: 3_000
+        case .metal: 8_000
+        case .magical: 1_000_000
+        }
+    }
+    var currentHealth: Int
+
+    init(kind: ObstacleKind, hitbox: RotatableRectangleHitbox, velocity: CGPoint, moveable: Bool = true, oneWay: Bool = false) {
+        self.kind = kind
+        self.hitbox = hitbox
+        self.velocity = velocity
+        self.moveable = moveable
+        self.oneWay = oneWay
+        self.currentHealth = 0
+
+        self.currentHealth = totalHealth
+    }
 
     func isReposition(_ other: WallObstacle) -> Bool {
         other.hitbox.size == self.hitbox.size &&
@@ -204,13 +225,21 @@ struct King: PhysicsObject, KillableObject {
     var density: CGFloat { 10.0 }
     var mass: CGFloat { density * .pi*hitbox.radius*hitbox.radius }
 
-    let totalHealth: Int = 200
-    var currentHealth: Int = 200
+    let totalHealth: Int
+    var currentHealth: Int
 
     init(isPlayerKing: Bool, position: CGPoint, velocity: CGPoint) {
         self.isPlayerKing = isPlayerKing
         self.hitbox = .init(radius: 30, center: position)
         self.velocity = velocity
+
+        if isPlayerKing {
+            totalHealth = 200
+            currentHealth = 200
+        } else {
+            totalHealth = 100
+            currentHealth = 100
+        }
     }
 
     func isReposition(_ other: King) -> Bool { false }
