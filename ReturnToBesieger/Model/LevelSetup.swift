@@ -27,3 +27,16 @@ struct BudgetItem: Identifiable {
 
     var id: UUID { object.id }
 }
+
+enum LevelPhase: Hashable {
+    /// The user can place walls
+    case placeWalls
+    /// The game is currently playing
+    case playing
+    /// The game is currently paused, but the user cannot place walls.
+    case paused
+    /// The user has won
+    case win
+    /// The user has lost
+    case lose
+}

@@ -230,6 +230,23 @@ class PhysicsManager {
         print("Interactions between \(hitBox1) and \(hitBox2) are not supported yet")
         return nil
     }
+
+    /// Whether an object would hit others. This is not called by the object itself, and should be called externally
+    /// to check if a candidate position works
+    func candidateOverlapsOthers(_ candidate: any PhysicsObject) -> Bool {
+        for object in objects where object.id != candidate.id {
+            let normal = normalOfCollision(hitBox1: object.hitbox, hitBox2: candidate.hitbox)
+            let collides = (normal != nil && normal != .zero)
+                || object.hitbox.frame.contains(candidate.hitbox.frame)
+                || candidate.hitbox.frame.contains(object.hitbox.frame)
+            if collides, delegate?.objectsShoudlCollide(object1: candidate, object2: object) != true {
+                // normal exists, is non-zero, and the delegate allows it to collide
+                return true
+            }
+        }
+
+        return false
+    }
 }
 
 protocol PhysicsManagerDelegate {

@@ -12,6 +12,7 @@ struct PhysicsManualMoveTarget<Content: View>: View {
     var manager: PhysicsManager
     var enabled: Bool
     var content: Content
+    var isValidPosition: (CGPoint) -> Bool
 
     @State private var preservedPosition: CGPoint?
     @State private var preservedAngle: Angle?
@@ -19,11 +20,18 @@ struct PhysicsManualMoveTarget<Content: View>: View {
     @State private var lastDragTime: Date?
     @State private var throwVelocity: CGPoint?
 
-    init(object: any PhysicsObject, manager: PhysicsManager, enabled: Bool = true, @ViewBuilder content: () -> Content) {
+    init(
+        object: any PhysicsObject,
+        manager: PhysicsManager,
+        enabled: Bool = true,
+        @ViewBuilder content: () -> Content,
+        isValidPosition: @escaping (CGPoint) -> Bool = { _ in true }
+    ) {
         self.object = object
         self.manager = manager
         self.enabled = enabled
         self.content = content()
+        self.isValidPosition = isValidPosition
     }
 
     var body: some View {
@@ -70,11 +78,11 @@ struct PhysicsManualMoveTarget<Content: View>: View {
                         // v = s / t = (1/t) * s
                         (1 / now.timeIntervalSince(lastDragTime)) * (preservedPosition! + displacement - object.hitbox.center)
                     } else { nil }
-                    print("Displacement changed to: \(displacement)")
+                    let newCenter = preservedPosition! + displacement
                     throwVelocity = newVelocity
                     manager.changeObjectProperties(
                         object.id,
-                        center: preservedPosition! + displacement,
+                        center: isValidPosition(newCenter) ? newCenter : nil,
                         velocity: .zero
                     )
                 }
@@ -87,9 +95,10 @@ struct PhysicsManualMoveTarget<Content: View>: View {
 
                     print("Displacement stopped at: \(value.translation)")
                     let displacement = CGPoint(x: value.translation.width, y: -value.translation.height)
+                    let newCenter = preservedPosition! + displacement
                     manager.changeObjectProperties(
                         object.id,
-                        center: preservedPosition! + displacement,
+                        center: isValidPosition(newCenter) ? newCenter : nil,
                         velocity: throwVelocity
                     )
                 }

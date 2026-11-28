@@ -17,6 +17,8 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
     @ObservationIgnored var objectsBackup: [any PhysicsObject] = []
     /// The current level setup, if any
     var level: LevelSetup?
+    /// The current phase within the level
+    var levelPhase: LevelPhase = .placeWalls
     /// The current budget
     var currentBudget: [BudgetItem] = []
 
@@ -47,19 +49,25 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
         super.update(dt: dt * timeRate)
     }
 
-    func startSimulation() {
+    func startSimulation(timeRate: CGFloat = 1) {
         physicsEnabled = true
         delegate = self
+        levelPhase = .playing
         objectsBackup = objects
+        self.timeRate = timeRate
     }
 
     func endSimulation() {
         physicsEnabled = false
+        levelPhase = .paused
+        timeRate = 1
     }
 
     func resetToBackup() {
         endSimulation()
         objects = objectsBackup
+        levelPhase = .placeWalls
+        timeRate = 1
     }
 
     func load(level: LevelSetup) {
@@ -85,11 +93,20 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
             factory.updateAngle(to: -factoryToKing.angle)
             objects[index] = factory
         }
+
+        levelPhase = .placeWalls
     }
 }
 
 extension GameManager {
     func objectsShoudlCollide(object1: any PhysicsObject, object2: any PhysicsObject) -> Bool {
+        // during wall placement, everything collides
+        guard levelPhase != .placeWalls else { return true }
+        // walls don't intersect with other walls
+        if object1 is WallObstacle, object2 is WallObstacle {
+            return false
+        }
+
         guard let (wall, ball) = (object1, object2) as? (WallObstacle, BallProjectile)
                               ?? (object2, object1) as? (WallObstacle, BallProjectile),
               wall.oneWay

@@ -186,7 +186,7 @@ struct GameView: View {
     }
 
     func viewFor(ballProjectile: BallProjectile) -> some View {
-        PhysicsManualMoveTarget(object: ballProjectile, manager: physics, enabled: !physics.physicsEnabled) {
+        PhysicsManualMoveTarget(object: ballProjectile, manager: physics, enabled: physics.levelPhase == .placeWalls) {
             switch ballProjectile.kind {
             case .rock:
                 Circle()
@@ -221,7 +221,7 @@ struct GameView: View {
     }
 
     func viewFor(wallObstacle: WallObstacle) -> some View {
-        PhysicsManualMoveTarget(object: wallObstacle, manager: physics, enabled: wallObstacle.moveable && !physics.physicsEnabled) {
+        PhysicsManualMoveTarget(object: wallObstacle, manager: physics, enabled: wallObstacle.moveable && physics.levelPhase == .placeWalls) {
             Group { switch wallObstacle.kind {
             case .wood:
                 Rectangle()
@@ -267,7 +267,17 @@ struct GameView: View {
                         .padding()
                 }
             }
+        } isValidPosition: { candidateCenter in
+            // walls must be placed in the RHS of the field
+            guard candidateCenter.x > 0 else { return false }
+
+            var mutableObstacle = wallObstacle
+            mutableObstacle.updateCenter(to: candidateCenter)
+
+            // wall must not overlap anything else
+            return !physics.candidateOverlapsOthers(mutableObstacle)
         }
+        .border(.red, width: wallObstacle.moveable ? 0 : 5)
         .frame(width: wallObstacle.hitbox.size.width, height: wallObstacle.hitbox.size.height)
         .rotationEffect(wallObstacle.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
     }
