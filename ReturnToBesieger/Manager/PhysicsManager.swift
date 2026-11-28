@@ -25,7 +25,7 @@ class PhysicsManager {
 
     init(
         objects: [any PhysicsObject] = [],
-        bounds: CGRect = .init(center: .zero, size: screenSize),
+        bounds: CGRect = .init(center: .zero, size: simulationSize),
         delegate: (any PhysicsManagerDelegate)? = nil
     ) {
         self.objects = objects
@@ -34,13 +34,23 @@ class PhysicsManager {
     }
 
     /// Informs the physics manager that the given object's hitbox, angle, and/or velocity should be changed.
-    func changeObjectProperties(_ objectId: UUID, center: CGPoint? = nil, angle: Angle? = nil, velocity: CGPoint? = nil) {
+    func changeObjectProperties(
+        _ objectId: UUID,
+        center: CGPoint? = nil,
+        angle: Angle? = nil,
+        velocity: CGPoint? = nil,
+        isRelease: Bool = false
+    ) {
         guard let index = objects.firstIndex(where: { $0.id == objectId }) else { return }
         var objectCopy = objects[index]
         if let center { objectCopy.updateCenter(to: center) }
         if let angle { objectCopy.updateAngle(to: angle) }
         if let velocity { objectCopy.velocity = velocity }
         objects[index] = objectCopy
+
+        if isRelease, !bounds.intersects(objectCopy.hitbox.frame) {
+            delegate?.objectDidExitBounds(object: objectCopy)
+        }
     }
 
     /// Updates all of the objects. Note that you must NOT remove or add objects during an update.
@@ -157,7 +167,7 @@ class PhysicsManager {
         // inform object out of bounds. Note that we do not use a for loop here, as the delegate may
         // delete objects and we don't want to cause looping problems.
         objects
-            .filter { !bounds.contains($0.hitbox.frame) }
+            .filter { !bounds.intersects($0.hitbox.frame) }
             .forEach { delegate?.objectDidExitBounds(object: $0) }
     }
 

@@ -24,6 +24,8 @@ protocol PhysicsObject: Identifiable {
 
     mutating func updateCenter(to newCenter: CGPoint)
     mutating func updateAngle(to newAngle: Angle)
+
+    func isReposition(_ other: Self) -> Bool
 }
 
 extension PhysicsObject {
@@ -32,6 +34,11 @@ extension PhysicsObject {
     }
     mutating func updateAngle(to newAngle: Angle) {
         self.hitbox.angle = newAngle
+    }
+
+    func isReposition(_ other: any PhysicsObject) -> Bool {
+        guard let other = other as? Self else { return false }
+        return isReposition(other)
     }
 }
 
@@ -46,6 +53,10 @@ struct Ball: PhysicsObject {
     var velocity: CGPoint
     var dragCoefficient: CGFloat { 0 }
     var mass: CGFloat { .pi*hitbox.radius*hitbox.radius } // ball mass is equal to area
+
+    func isReposition(_ other: Ball) -> Bool {
+        other.hitbox.radius == self.hitbox.radius
+    }
 }
 
 struct Wall: PhysicsObject {
@@ -54,6 +65,10 @@ struct Wall: PhysicsObject {
     var velocity: CGPoint
     var dragCoefficient: CGFloat { 1.0 }
     var mass: CGFloat { hitbox.size.width*hitbox.size.height } // wall mass is equal to area
+
+    func isReposition(_ other: Wall) -> Bool {
+        other.hitbox.size == self.hitbox.size
+    }
 }
 
 struct BallProjectile: PhysicsObject {
@@ -76,6 +91,10 @@ struct BallProjectile: PhysicsObject {
         }
     }
     var mass: CGFloat { density * .pi*hitbox.radius*hitbox.radius }
+
+    func isReposition(_ other: BallProjectile) -> Bool {
+        other.hitbox.radius == self.hitbox.radius && other.kind == self.kind
+    }
 }
 
 struct WallObstacle: PhysicsObject {
@@ -105,6 +124,13 @@ struct WallObstacle: PhysicsObject {
         }
     }
     var mass: CGFloat { density * hitbox.size.width*hitbox.size.height }
+
+    func isReposition(_ other: WallObstacle) -> Bool {
+        other.hitbox.size == self.hitbox.size &&
+        other.kind == self.kind &&
+        other.moveable == self.moveable &&
+        other.oneWay == self.oneWay
+    }
 }
 
 struct ProjectileFactory: PhysicsObject {
@@ -165,6 +191,8 @@ struct ProjectileFactory: PhysicsObject {
             velocity: newVelocity
         )
     }
+
+    func isReposition(_ other: ProjectileFactory) -> Bool { false }
 }
 
 struct King: PhysicsObject, KillableObject {
@@ -184,4 +212,6 @@ struct King: PhysicsObject, KillableObject {
         self.hitbox = .init(radius: 30, center: position)
         self.velocity = velocity
     }
+
+    func isReposition(_ other: King) -> Bool { false }
 }

@@ -61,7 +61,7 @@ struct PhysicsManualMoveTarget<Content: View>: View {
                     defer {
                         preservedAngle = nil
                     }
-                    manager.changeObjectProperties(object.id, angle: preservedAngle! + angle)
+                    manager.changeObjectProperties(object.id, angle: preservedAngle! + angle, isRelease: true)
                     print("Angle stopped at: \(angle.degrees)")
                 }
         )
@@ -99,7 +99,8 @@ struct PhysicsManualMoveTarget<Content: View>: View {
                     manager.changeObjectProperties(
                         object.id,
                         center: isValidPosition(newCenter) ? newCenter : nil,
-                        velocity: throwVelocity
+                        velocity: throwVelocity,
+                        isRelease: true
                     )
                 }
         )

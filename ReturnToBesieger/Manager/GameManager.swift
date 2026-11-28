@@ -51,7 +51,6 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
 
     func startSimulation(timeRate: CGFloat = 1) {
         physicsEnabled = true
-        delegate = self
         levelPhase = .playing
         objectsBackup = objects
         self.timeRate = timeRate
@@ -75,6 +74,7 @@ class GameManager: PhysicsManager, PhysicsManagerDelegate {
         self.level = level
         self.objects = []
         self.objectsBackup = []
+        delegate = self
 
         // load all of the objects in
         self.currentBudget = level.budget
@@ -136,6 +136,12 @@ extension GameManager {
     }
 
     func objectDidExitBounds(object: any PhysicsObject) {
+        // if this is during placement and its in the tray, delete it
+        if levelPhase == .placeWalls, let budgetIndex = level?.budget.firstIndex(where: { object.isReposition($0.object) }) {
+            // refund the budget item
+            level?.budget[budgetIndex].count += 1
+        }
+
         // remove the object
         objects.removeAll(where: { $0.id == object.id })
     }
