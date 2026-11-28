@@ -112,7 +112,7 @@ struct GameView: View {
                 Color(rgb: "7cac04")
             }
             ForEach(physics.objects, id: \.id) { object in
-                viewFor(object: object)
+                PhysicsObjectView(object: object, manager: physics)
             }
         }
         .onReceive(gameClock) { _ in
@@ -130,37 +130,49 @@ struct GameView: View {
 
                 if let budget = physics.level?.budget {
                     ForEach(budget.enumerated(), id: \.offset) { (index, budgetItem) in
-                        Group {
-                            viewFor(object: budgetItem.object)
-                        }
-                        .overlay(alignment: .bottomTrailing) {
-                            Text("\(budgetItem.count)")
-                                .foregroundStyle(.black)
-                                .padding(5)
-                                .background {
-                                    Circle().fill(.white)
-                                }
-                        }
-                        .onTapGesture {
-                            physics.addInstance(budgetIndex: index)
-                        }
-                        .opacity(budgetItem.count > 0 ? 1 : 0.7)
-                        .grayscale(budgetItem.count > 0 ? 0 : 1.0)
-                        .shadow(color: budgetItem.count > 0 ? .green : .clear, radius: 20)
-                        .overlay {
-                            if budgetItem.count == 0 {
-                                Image(systemName: "xmark")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .foregroundStyle(.red)
-                            }
-                        }
+                        BudgetItemView(budgetItem: budgetItem, index: index, manager: physics)
                     }
                 }
 
                 Spacer()
             }
             .padding(.all, 40)
+        }
+    }
+}
+
+struct BudgetItemView: View {
+    var budgetItem: BudgetItem
+    var index: Int
+    var manager: GameManager
+
+    @State private var placeholderInstance: (any PhysicsObject)?
+
+    var body: some View {
+        Group {
+            PhysicsObjectView(object: budgetItem.object, manager: manager)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Text("\(budgetItem.count)")
+                .foregroundStyle(.black)
+                .padding(5)
+                .background {
+                    Circle().fill(.white)
+                }
+        }
+        .onTapGesture {
+            manager.addInstance(budgetIndex: index)
+        }
+        .opacity(budgetItem.count > 0 ? 1 : 0.7)
+        .grayscale(budgetItem.count > 0 ? 0 : 1.0)
+        .shadow(color: budgetItem.count > 0 ? .green : .clear, radius: 20)
+        .overlay {
+            if budgetItem.count == 0 {
+                Image(systemName: "xmark")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(.red)
+            }
         }
     }
 }

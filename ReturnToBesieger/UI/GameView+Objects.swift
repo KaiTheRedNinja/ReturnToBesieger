@@ -7,9 +7,12 @@
 
 import SwiftUI
 
-extension GameView {
-    func viewFor(ballProjectile: BallProjectile) -> some View {
-        PhysicsManualMoveTarget(object: ballProjectile, manager: physics, enabled: physics.levelPhase == .placeWalls) {
+struct BallProjectileView: View {
+    var ballProjectile: BallProjectile
+    var manager: GameManager
+
+    var body: some View {
+        PhysicsManualMoveTarget(object: ballProjectile, manager: manager, enabled: manager.levelPhase == .placeWalls) {
             switch ballProjectile.kind {
             case .rock:
                 Circle()
@@ -42,9 +45,14 @@ extension GameView {
         }
         .frame(width: ballProjectile.hitbox.radius*2, height: ballProjectile.hitbox.radius*2)
     }
+}
 
-    func viewFor(wallObstacle: WallObstacle) -> some View {
-        PhysicsManualMoveTarget(object: wallObstacle, manager: physics, enabled: wallObstacle.moveable && physics.levelPhase == .placeWalls) {
+struct WallObstacleView: View {
+    var wallObstacle: WallObstacle
+    var manager: GameManager
+
+    var body: some View {
+        PhysicsManualMoveTarget(object: wallObstacle, manager: manager, enabled: wallObstacle.moveable && manager.levelPhase == .placeWalls) {
             Group { switch wallObstacle.kind {
             case .wood:
                 Rectangle()
@@ -98,14 +106,14 @@ extension GameView {
             mutableObstacle.updateCenter(to: candidateCenter)
 
             // wall must not overlap anything else
-            return !physics.candidateOverlapsOthers(mutableObstacle)
+            return !manager.candidateOverlapsOthers(mutableObstacle)
         }
         .border(.red, width: wallObstacle.moveable ? 0 : 5)
         .frame(width: wallObstacle.hitbox.size.width, height: wallObstacle.hitbox.size.height)
         .rotationEffect(wallObstacle.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
         .overlay {
             // if its outside bounds during placing time, it will be marked as to be deleted
-            if physics.levelPhase == .placeWalls, !physics.bounds.intersects(wallObstacle.hitbox.frame) {
+            if manager.levelPhase == .placeWalls, !manager.bounds.intersects(wallObstacle.hitbox.frame) {
                 Image(systemName: "trash")
                     .resizable()
                     .scaledToFit()
@@ -113,8 +121,12 @@ extension GameView {
             }
         }
     }
+}
 
-    func viewFor(king: King) -> some View {
+struct KingView: View {
+    var king: King
+
+    var body: some View {
         Group {
             if king.isPlayerKing {
                 Circle()
@@ -130,8 +142,12 @@ extension GameView {
         }
         .frame(width: king.hitbox.radius*2, height: king.hitbox.radius*2)
     }
+}
 
-    func viewFor(factory: ProjectileFactory) -> some View {
+struct ProjectileFactoryView: View {
+    var factory: ProjectileFactory
+
+    var body: some View {
         Group {
             switch factory.kind {
             case .slinger:
@@ -151,21 +167,26 @@ extension GameView {
         .frame(width: factory.hitbox.size.width, height: factory.hitbox.size.height)
         .rotationEffect(factory.hitbox.angle) // SwiftUI is clockwise positive but math is anticlockwise positive so i invert here
     }
+}
 
-    func viewFor(object: any PhysicsObject) -> some View {
+struct PhysicsObjectView: View {
+    var object: any PhysicsObject
+    var manager: GameManager
+
+    var body: some View {
         Group {
             if let ball = object as? Ball {
                 viewFor(ball: ball)
             } else if let wall = object as? Wall {
                 viewFor(wall: wall)
             } else if let ballProjectile = object as? BallProjectile {
-                viewFor(ballProjectile: ballProjectile)
+                BallProjectileView(ballProjectile: ballProjectile, manager: manager)
             } else if let wallObstacle = object as? WallObstacle {
-                viewFor(wallObstacle: wallObstacle)
+                WallObstacleView(wallObstacle: wallObstacle, manager: manager)
             } else if let king = object as? King {
-                viewFor(king: king)
+                KingView(king: king)
             } else if let factory = object as? ProjectileFactory {
-                viewFor(factory: factory)
+                ProjectileFactoryView(factory: factory)
             }
         }
         .offset(x: object.hitbox.center.x, y: -object.hitbox.center.y)
